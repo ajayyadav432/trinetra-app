@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block title %}Entity register{% endblock %}
+{% block content %}
+<div class="masthead">
+  <div>
+    <div class="eyebrow">§ 03 — entity register</div>
+    <h2>Assets · identifiers · actors</h2>
+  </div>
+  <div class="meta">
+    <a class="btn small" href="{{ url_for('export.assets_csv') }}">assets.csv</a>
+    <a class="btn small" href="{{ url_for('export.identifiers_csv') }}">identifiers.csv</a>
+    <a class="btn small" href="{{ url_for('export.actors_csv') }}">actors.csv</a>
+    <a class="btn small" href="{{ url_for('export.intel_json') }}">intel.json</a>
+  </div>
+</div>
+
+<form method="get" class="filters" style="margin-bottom:22px">
+  <div class="field">
+    <label class="fl" for="q">free text</label>
+    <input id="q" type="text" name="q" value="{{ filters.q }}" placeholder="handle, onion, banner…">
+  </div>
+  <div class="field">
+    <label class="fl" for="kind">identifier kind</label>
+    <select id="kind" name="kind">
+      <option value="">all kinds</option>
+      {% for k in kinds %}<option value="{{ k }}" {{ 'selected' if filters.kind == k }}>{{ k }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="field">
+    <label class="fl" for="category">category</label>
+    <select id="category" name="category">
+      <option value="">all categories</option>
+      {% for c in categories %}<option value="{{ c }}" {{ 'selected' if filters.category == c }}>{{ c }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="field"><button class="btn" type="submit">apply filter</button></div>
+  <div class="field"><a class="btn" href="{{ url_for('intel.index') }}">reset</a></div>
+</form>
+
+<div class="section-head"><span class="sn">03.1</span><h3>Hidden services</h3>
+  <span class="sh">{{ assets | length }} records</span></div>
+<div class="panel"><div class="body tight">
+  <table>
+    <thead><tr><th>address</th><th>title / label</th><th>category</th><th>state</th>
+      <th>banner</th><th>source</th><th>last scan</th></tr></thead>
+    <tbody>
+    {% for a in assets %}
+      <tr>
+        <td class="wrap"><a href="{{ url_for('intel.asset', asset_id=a.id) }}">{{ a.url }}</a></td>
+        <td>{{ a.title or a.label or '—' }}</td>
+        <td><span class="tag dark">{{ a.category }}</span></td>
+        <td>
+          {% if a.alive is none %}<span class="tag info">unscanned</span>
+          {% elif a.alive %}<span class="tag ok">live</span>
+          {% else %}<span class="tag high">dark</span>{% endif %}
+        </td>
+        <td class="mono dim">{{ a.server_banner or '—' }}</td>
+        <td class="dim">{{ a.source }}</td>
+        <td class="dim">{{ a.last_scan.strftime('%Y-%m-%d %H:%M') if a.last_scan else '—' }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="7" class="empty">no services — start a collection run</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div></div>
+
+<div class="section-head"><span class="sn">03.2</span><h3>Identifier register</h3>
+  <span class="sh">reused identifiers bridge surfaces</span></div>
+<div class="panel"><div class="body tight">
+  <table>
+    <thead><tr><th>kind</th><th>value</th><th class="num">assets</th><th>seen on</th><th>first seen</th></tr></thead>
+    <tbody>
+    {% for i, asset_list, shared in ident_rows %}
+      <tr>
+        <td><span class="tag {{ 'high' if shared else 'blue' }}">{{ i.kind }}</span></td>
+        <td class="wrap mono">{{ i.value[:110] }}{% if i.value|length > 110 %}…{% endif %}</td>
+        <td class="num">{{ asset_list | length }}</td>
+        <td class="wrap dim">
+          {% for a in asset_list[:3] %}{{ a.url }}{% if not loop.last %} · {% endif %}{% endfor %}
+          {% if asset_list | length > 3 %}+{{ asset_list | length - 3 }}{% endif %}
+        </td>
+        <td class="dim">{{ i.first_seen.strftime('%Y-%m-%d') }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="5" class="empty">no identifiers harvested yet</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div></div>
+
+<div class="section-head"><span class="sn">03.3</span><h3>Derived asset linkages</h3>
+  <span class="sh">shared identifiers → confidence</span></div>
+<div class="panel"><div class="body tight">
+  <table>
+    <thead><tr><th>service a</th><th>service b</th><th>shared kinds</th>
+      <th class="num">n</th><th>confidence</th></tr></thead>
+    <tbody>
+    {% for l in linkages %}
+      <tr>
+        <td class="wrap">{{ l.a_label }}</td>
+        <td class="wrap">{{ l.b_label }}</td>
+        <td>{% for k in l.kinds %}<span class="tag blue">{{ k }}</span> {% endfor %}</td>
+        <td class="num">{{ l.count }}</td>
+        <td><span class="tag {{ 'high' if l.score >= 90 else ('medium' if l.score >= 65 else 'low') }}">{{ l.label }} · {{ l.score }}</span></td>
+      </tr>
+    {% else %}
+      <tr><td colspan="5" class="empty">no identifier is shared between two services yet — scan more targets</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div></div>
+
+<div class="section-head"><span class="sn">03.4</span><h3>Actor records</h3>
+  <span class="sh">{{ actors | length }} actors · {{ persona_links | length }} asserted links</span></div>
+<div class="panel"><div class="body tight">
+  <table>
+    <thead><tr><th>handle</th><th>aliases</th><th>category</th><th>status</th>
+      <th class="num">confidence</th><th>last seen</th></tr></thead>
+    <tbody>
+    {% for a in actors %}
+      <tr>
+        <td><a href="{{ url_for('intel.actor', handle=a.handle) }}">{{ a.handle }}</a></td>
+        <td class="dim">{{ a.aliases or '—' }}</td>
+        <td><span class="tag dark">{{ a.category }}</span></td>
+        <td><span class="tag info">{{ a.status }}</span></td>
+        <td class="num">{{ a.confidence }}%</td>
+        <td class="dim">{{ a.last_seen.strftime('%Y-%m-%d') if a.last_seen else '—' }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="6" class="empty">no actor records yet — assert links from stylometry</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% if persona_links %}
+  <table style="margin-top:6px">
+    <thead><tr><th>actor a</th><th>actor b</th><th>method</th><th class="num">confidence</th><th>evidence</th></tr></thead>
+    <tbody>
+    {% for l in persona_links %}
+      <tr>
+        <td>{{ l.actor_a }}</td><td>{{ l.actor_b }}</td>
+        <td><span class="tag {{ 'high' if l.method == 'stylometry' else 'blue' }}">{{ l.method }}</span></td>
+        <td class="num">{{ l.confidence }}%</td>
+        <td class="dim wrap">{{ l.evidence[:140] }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</div></div>
+{% endblock %}

@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+{% block title %}Stylometry{% endblock %}
+{% block content %}
+
+<div class="flex flex-col w-full gap-space-md">
+
+  <!-- ============================================ investigation banner -->
+  <section class="w-full bg-surface-container-lowest border-b border-surface-container-highest p-space-md">
+    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md border-b border-surface-container-high pb-space-md">
+      <div class="flex flex-col gap-space-xs">
+        <div class="flex items-center gap-space-sm flex-wrap">
+          <span class="px-space-xs py-0.5 bg-error-container text-error font-label-xs text-label-xs tracking-widest uppercase">CLASSIFIED // OP-ID: PS-26151</span>
+          <span class="font-label-xs text-label-xs text-outline font-mono">HASH: SHA256-7fa890e0c4b12f9a</span>
+        </div>
+        <h1 class="font-headline-lg text-headline-lg tracking-wider text-on-surface uppercase font-bold">
+          STYLOMETRIC SIMILARITY MATRIX &amp; AUTHORSHIP PROFILING
+        </h1>
+        <p class="font-body-sm text-body-sm text-outline max-w-4xl">
+          NLP authorship attribution engine comparing
+          <span class="text-on-surface font-semibold">{{ result.handles | length if result else 0 }} dark-web forum handles</span>
+          across <span class="text-on-surface font-semibold">{{ posts | length }} seized posts &amp; listings</span> —
+          every confirmed pair writes an evidentiary persona link into the attribution register.
+        </p>
+      </div>
+      <div class="flex items-center gap-space-md shrink-0">
+        <div class="bg-surface-container-low border border-surface-container-high px-space-md py-space-sm text-right">
+          <span class="font-label-xs text-label-xs text-outline uppercase block">EVIDENTIARY THRESHOLD</span>
+          <span class="font-label-md text-label-md text-secondary font-mono">CONFIDENCE ≥ 0.85</span>
+        </div>
+        <div class="bg-surface-container-low border border-surface-container-high px-space-md py-space-sm text-right">
+          <span class="font-label-xs text-label-xs text-outline uppercase block">ENGINE</span>
+          <span class="font-label-md text-label-md text-tertiary-fixed-dim font-mono">{{ result.library if result else 'STANDBY' }}</span>
+        </div>
+      </div>
+    </div>
+    <div class="pt-space-sm flex flex-wrap items-center justify-between gap-space-sm font-label-xs text-label-xs font-mono">
+      <div class="flex items-center gap-space-sm text-outline flex-wrap">
+        <span class="text-primary-container uppercase font-bold">MODEL SPEC:</span>
+        <span class="text-on-surface">function-word frequency</span><span class="text-outline-variant">/</span>
+        <span class="text-on-surface">punctuation &amp; casing cadence</span><span class="text-outline-variant">/</span>
+        <span class="text-on-surface">token Jaccard overlap</span><span class="text-outline-variant">/</span>
+        <span class="text-on-surface">TF cosine · 3-gram &amp; word 2-gram</span>
+      </div>
+      <div class="flex items-center gap-space-md text-outline">
+        <span>OWN-SAMPLE WEIGHT: <strong class="text-on-surface font-mono">0.20 FW · 0.55 NG · 0.25 SHAPE</strong></span>
+        <span>LINK BANDS: <strong class="text-secondary font-mono">HIGH ≥0.85 · MED ≥0.65 · LOW ≥0.50</strong></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================ workspace split -->
+  <div class="w-full grid grid-cols-1 lg:grid-cols-12 gap-space-md items-start">
+
+    <!-- ---------------------------------- LEFT: heatmap + intake -->
+    <section class="lg:col-span-5 flex flex-col gap-space-md">
+      <div class="flex flex-col bg-surface-container-lowest border border-surface-container-highest">
+        <div class="p-space-md border-b border-surface-container-highest bg-surface-container-low flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm">
+          <div class="flex items-center gap-space-sm">
+            <span class="material-symbols-outlined text-primary text-[18px]">grid_4x4</span>
+            <span class="font-headline-sm text-headline-sm uppercase tracking-wider text-on-surface">PAIRWISE SIMILARITY HEATMAP ({{ result.handles | length if result else 0 }}×{{ result.handles | length if result else 0 }})</span>
+          </div>
+          <div class="flex items-center gap-space-xs">
+            <a class="px-space-sm py-1 bg-surface-container border border-surface-container-high text-on-surface hover:border-outline font-label-xs text-label-xs uppercase tracking-wider transition-colors" href="#intake">FILTER: ALL</a>
+            <span class="px-space-sm py-1 bg-surface-container border border-outline-variant text-tertiary-fixed-dim font-label-xs text-label-xs uppercase tracking-wider font-mono">≥ 0.85 LINK</span>
+            <a class="px-space-sm py-1 bg-surface-container border border-surface-container-high text-on-surface hover:border-outline font-label-xs text-label-xs uppercase tracking-wider transition-colors flex items-center gap-0.5" href="#compare"><span class="material-symbols-outlined text-[12px]">compare_arrows</span> AD-HOC</a>
+          </div>
+        </div>
+
+        <div class="p-space-md overflow-x-auto select-none">
+          {% if result %}
+          <table class="w-full border-collapse font-mono text-center">
+            <thead>
+              <tr class="bg-surface-container-high text-outline font-label-xs text-label-xs uppercase tracking-wider">
+                <th class="p-2 text-left">HANDLE</th>
+                {% for h in result.handles %}
+                <th class="p-2" title="{{ h }}">{{ h[:12] }}<br><span class="text-outline-variant font-normal">{{ result.post_counts[h] }}p</span></th>
+                {% endfor %}
+              </tr>
+            </thead>
+            <tbody class="font-label-xs text-label-xs">
+              {% for i, h in enumerate(result.handles) %}
+              <tr class="hover:bg-surface-container-low transition-colors">
+                <th class="p-2 text-left text-on-surface bg-surface-container-low">{{ h }}</th>
+                {% for j in range(result.handles | length) %}
+                  {% set score = result.matrix[i][j] %}
+                  {% if i == j %}
+                    <td class="cell dim">1.000</td>
+                  {% else %}
+                    {% if score >= 0.85 %}{% set heat = 'background:#d8452c;color:#fff;font-weight:700' %}
+                    {% elif score >= 0.65 %}{% set heat = 'background:rgba(216,69,44,.30);color:#ffb4a6' %}
+                    {% elif score >= 0.50 %}{% set heat = 'background:rgba(250,188,69,.16);color:#fabc45' %}
+                    {% else %}{% set heat = 'background:rgba(46,160,67,.10);color:#8a8578' %}{% endif %}
+                    <td class="cell" style="{{ heat }}">
+                      <a class="cell" style="color:inherit;display:block" href="{{ url_for('styl.page', a=result.handles[i], b=result.handles[j]) }}">{{ '%.3f' % score }}</a>
+                    </td>
+                  {% endif %}
+                {% endfor %}
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          <div class="flex items-center gap-space-md mt-space-sm font-label-xs text-label-xs text-outline font-mono">
+            <span class="flex items-center gap-1"><span class="w-3 h-3 inline-block" style="background:#d8452c"></span> ≥ 0.85 LINK RECOMMENDED</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-3 inline-block" style="background:rgba(216,69,44,.30)"></span> ≥ 0.65 ELEVATED</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-3 inline-block" style="background:rgba(46,160,67,.10)"></span> COLD</span>
+          </div>
+          {% else %}
+          <p class="font-body-sm text-body-sm text-outline font-mono">corpus empty — add posts to build stylometric profiles.</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- intake forms -->
+      <div id="intake" class="bg-surface-container-lowest border border-surface-container-highest">
+        <div class="px-space-md py-space-xs bg-surface-container-low border-b border-surface-container-highest flex items-center justify-between">
+          <span class="font-headline-sm text-headline-sm uppercase tracking-wider text-on-surface">CORPUS INTAKE // NEW SPECIMEN</span>
+          <span class="font-label-xs text-label-xs text-outline font-mono">≥ 150 WORDS</span>
+        </div>
+        <form method="post" action="{{ url_for('styl.add_post') }}" class="p-space-md flex flex-col gap-space-sm">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-space-sm">
+            <label class="flex flex-col gap-1">
+              <span class="font-label-xs text-label-xs text-outline uppercase">HANDLE</span>
+              <input class="inp" type="text" name="handle" placeholder="vendor_handle" required>
+            </label>
+            <label class="flex flex-col gap-1">
+              <span class="font-label-xs text-label-xs text-outline uppercase">TITLE (OPTIONAL)</span>
+              <input class="inp" type="text" name="title" placeholder="listing / sticky title">
+            </label>
+          </div>
+          <label class="flex flex-col gap-1">
+            <span class="font-label-xs text-label-xs text-outline uppercase">TEXT SAMPLE — PASTE EXACTLY AS WRITTEN</span>
+            <textarea class="inp" name="text" rows="5" required placeholder="…deal only via garant service, no direct btc transfer…"></textarea>
+          </label>
+          <button class="self-start px-space-md py-space-xs bg-primary-container hover:bg-inverse-primary text-on-primary font-label-sm text-label-sm tracking-widest uppercase transition-colors flex items-center gap-space-xs" type="submit">
+            <span class="material-symbols-outlined text-[14px]">add_circle</span> ADD TO CORPUS
+          </button>
+        </form>
+      </div>
+
+      <div id="compare" class="bg-surface-container-lowest border border-surface-container-highest">
+        <div class="px-space-md py-space-xs bg-surface-container-low border-b border-surface-container-highest flex items-center justify-between">
+          <span class="font-headline-sm text-headline-sm uppercase tracking-wider text-on-surface">AD-HOC COMPARISON // TWO UNKNOWN SAMPLES</span>
+          <span class="font-label-xs text-label-xs text-outline font-mono">OFF-CORPUS</span>
+        </div>
+        <form method="post" action="{{ url_for('styl.compare') }}" class="p-space-md flex flex-col gap-space-sm">
+          <label class="flex flex-col gap-1">
+            <span class="font-label-xs text-label-xs text-outline uppercase">SAMPLE A</span>
+            <textarea class="inp" name="text_a" rows="3" required placeholder="first sample…"></textarea>
+          </label>
+          <label class="flex flex-col gap-1">
+            <span class="font-label-xs text-label-xs text-outline uppercase">SAMPLE B</span>
+            <textarea class="inp" name="text_b" rows="3" required placeholder="second sample…"></textarea>
+          </label>
+          <button class="self-start px-space-md py-space-xs bg-surface-container border border-outline-variant text-on-surface hover:border-outline font-label-sm text-label-sm tracking-widest uppercase transition-colors flex items-center gap-space-xs" type="submit">
+            <span class="material-symbols-outlined text-[14px]">compare_arrows</span> COMPUTE SIMILARITY
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ---------------------------------- RIGHT: ranked pairs -->
+    <section class="lg:col-span-7 flex flex-col gap-space-md">
+      {% if result and result.pairs %}
+        {% for p in result.pairs %}
+        <article class="w-full bg-surface-container-lowest {{ 'border-2 border-primary-container' if loop.first else 'border border-surface-container-highest' }}">
+          <div class="px-space-md py-space-xs bg-surface-container-low border-b border-surface-container-highest flex flex-wrap items-center justify-between gap-space-xs">
+            <div class="flex items-center gap-space-sm">
+              <span class="px-space-xs py-0.5 {{ 'bg-primary-container text-on-primary' if p.recommended else 'bg-tertiary-container text-on-tertiary-container border border-tertiary' }} font-label-xs text-label-xs font-bold tracking-widest uppercase">PAIR #{{ '%02d' % loop.index }}</span>
+              <span class="font-headline-sm text-headline-sm text-on-surface tracking-wider uppercase font-mono font-bold">{{ p.a }} &lt;---&gt; {{ p.b }}</span>
+            </div>
+            <div class="flex items-center gap-space-sm">
+              <span class="font-label-xs text-label-xs text-outline uppercase">SIMILARITY:</span>
+              <span class="font-headline-sm text-headline-sm {{ 'text-primary' if p.recommended else 'text-tertiary' }} font-mono font-bold">{{ '%.3f' % p.score }}</span>
+              <span class="px-space-xs py-0.5 {{ 'bg-error-container text-error border border-error' if p.recommended else 'bg-tertiary-container/30 text-tertiary border border-tertiary' }} font-label-xs text-label-xs tracking-wider uppercase font-bold">[{{ p.label }}]</span>
+            </div>
+          </div>
+
+          <div class="p-space-md flex flex-col gap-space-md">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm bg-surface-container p-space-sm border border-surface-container-high">
+              <div class="flex flex-wrap items-center gap-space-xs font-label-xs text-label-xs text-on-surface-variant font-mono">
+                <span class="material-symbols-outlined {{ 'text-secondary' if p.recommended else 'text-tertiary' }} text-[16px]">{{ 'verified_user' if p.recommended else 'rule' }}</span>
+                <span>CHAIN-OF-CUSTODY: STYLO-{{ '%02d' % loop.index }}-{{ '%04d' % (p.score * 10000) | int }}</span>
+                <span class="text-outline-variant">|</span>
+                <span>STATUS: {{ 'READY FOR WARRANT FILING' if p.recommended else 'MONITORING — PENDING MORE SAMPLES' }}</span>
+              </div>
+              <div class="flex items-center gap-space-xs shrink-0">
+                <a class="px-space-sm py-1 bg-surface-container border border-surface-container-high text-on-surface hover:border-outline font-label-xs text-label-xs uppercase tracking-widest font-mono transition-colors flex items-center gap-1" href="{{ url_for('styl.page', a=p.a, b=p.b) }}"><span class="material-symbols-outlined text-[14px]">search_insights</span> FEATURES</a>
+                {% if p.recommended %}
+                <form method="post" action="{{ url_for('styl.link') }}" style="display:inline">
+                  <input type="hidden" name="a" value="{{ p.a }}">
+                  <input type="hidden" name="b" value="{{ p.b }}">
+                  <input type="hidden" name="score" value="{{ p.score }}">
+                  <button class="px-space-sm py-1 bg-primary-container hover:bg-inverse-primary text-on-primary font-label-xs text-label-xs uppercase tracking-widest font-bold font-mono transition-colors flex items-center gap-1" type="submit">
+                    <span class="material-symbols-outlined text-[14px]">link</span> RECORD LINK
+                  </button>
+                </form>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="flex flex-wrap gap-1">
+              {% for k, v in p.components.items() if v is not none %}
+              <span class="px-space-xs py-0.5 font-label-xs font-mono {{ 'bg-secondary-container/20 text-secondary border border-secondary-container' if v >= 0.65 else 'bg-surface-container text-outline border border-outline-variant' }}">{{ k }} {{ '%.2f' % v }}</span>
+              {% endfor %}
+            </div>
+          </div>
+        </article>
+        {% endfor %}
+      {% else %}
+        <div class="bg-surface-container-lowest border border-surface-container-highest p-space-md font-body-sm text-body-sm text-outline font-mono">
+          NO PAIRS YET — ADD AT LEAST TWO HANDLES TO THE CORPUS.
+        </div>
+      {% endif %}
+
+      <!-- feature divergence -->
+      {% if diff and pair %}
+      <div class="bg-surface-container-lowest border border-surface-container-highest">
+        <div class="bg-surface-container-low px-space-md py-space-xs flex flex-wrap items-center justify-between gap-space-md">
+          <span class="font-headline-sm text-headline-sm text-on-surface tracking-wider uppercase font-bold">FEATURE EXTRACTION BREAKDOWN VECTOR</span>
+          <span class="font-label-xs text-label-xs text-outline font-mono">{{ pair[0] }} VS {{ pair[1] }} · CLICK ANY MATRIX CELL TO OPEN</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left font-mono border-collapse">
+            <thead>
+              <tr class="bg-surface-container-high border-b border-surface-container-highest font-label-xs text-label-xs text-outline">
+                <th class="p-2 uppercase font-semibold">LINGUISTIC FEATURE</th>
+                <th class="p-2 uppercase font-semibold">{{ pair[0] }}</th>
+                <th class="p-2 uppercase font-semibold">{{ pair[1] }}</th>
+                <th class="p-2 uppercase font-semibold text-right">DIVERGENCE</th>
+              </tr>
+            </thead>
+            <tbody class="font-label-xs text-label-xs divide-y divide-surface-container-highest">
+              {% for r in diff %}
+                {% set gap = (r.a - r.b) %}
+                {% set mag = ([r.a, r.b, 1] | max) %}
+                <tr class="hover:bg-surface-container-low transition-colors">
+                  <td class="p-2 text-on-surface font-semibold">{{ r.metric }}</td>
+                  <td class="p-2 text-on-surface-variant">{{ r.a }}</td>
+                  <td class="p-2 text-on-surface-variant">{{ r.b }}</td>
+                  <td class="p-2 text-right">
+                    <span class="inline-flex items-center gap-2">
+                      <span class="inline-block w-16 h-1.5 bg-surface-container-high align-middle"><span class="inline-block h-full {{ 'bg-primary-container' if (gap | abs) > (mag * 0.4) else 'bg-secondary' }}" style="width: {{ [100, (gap | abs / mag) * 100] | min }}%"></span></span>
+                      <span class="{{ 'text-primary' if (gap | abs) > (mag * 0.4) else 'text-secondary' }} font-mono">{{ '%+.2f' % gap }}</span>
+                    </span>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- corpus register -->
+      <div class="bg-surface-container-lowest border border-surface-container-highest">
+        <div class="bg-surface-container-low px-space-md py-space-xs flex flex-wrap items-center justify-between gap-space-md">
+          <span class="font-headline-sm text-headline-sm text-on-surface tracking-wider uppercase font-bold">CORPUS REGISTER // SEIZED SPECIMENS</span>
+          <span class="bg-surface-container-high text-primary font-label-xs text-label-xs px-2 py-0.5 font-mono">{{ posts | length }} ENTRIES</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left font-mono border-collapse">
+            <thead>
+              <tr class="bg-surface-container-high text-outline font-label-xs text-label-xs uppercase tracking-wider">
+                <th class="py-space-xs px-space-md">HANDLE</th>
+                <th class="py-space-xs px-space-md">TITLE</th>
+                <th class="py-space-xs px-space-md">WORDS</th>
+                <th class="py-space-xs px-space-md">SOURCE</th>
+                <th class="py-space-xs px-space-md">ADDED</th>
+                <th class="py-space-xs px-space-md text-right">ACTION</th>
+              </tr>
+            </thead>
+            <tbody class="text-body-sm">
+              {% for p in posts %}
+              <tr class="bg-surface-container-lowest hover:bg-surface-container-low transition-colors">
+                <td class="py-2 px-space-md text-on-surface">{{ p.handle }}</td>
+                <td class="py-2 px-space-md text-outline">{{ p.title or '—' }}</td>
+                <td class="py-2 px-space-md text-on-surface">{{ p.word_count }}</td>
+                <td class="py-2 px-space-md text-outline">{{ p.source }}</td>
+                <td class="py-2 px-space-md text-outline">{{ p.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td class="py-2 px-space-md text-right">
+                  <form method="post" action="{{ url_for('styl.delete_post', post_id=p.id) }}" style="display:inline">
+                    <button class="bg-surface-container hover:bg-surface-container-high px-2 py-1 text-label-xs uppercase text-on-surface" type="submit">PURGE</button>
+                  </form>
+                </td>
+              </tr>
+              {% else %}
+              <tr><td colspan="6" class="py-6 px-space-md text-center text-outline text-body-sm">CORPUS EMPTY — INTAKE SPECIMENS AT LEFT</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div class="bg-surface-container-low px-space-md py-1 flex items-center justify-between text-outline font-label-xs text-label-xs font-mono">
+          <span>SHOWING {{ posts | length }} SPECIMENS // FORENSIC PIPELINE: STYLO-PARSER-LE</span>
+          <span>RE-CLUSTER ON EVERY INTAKE</span>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}

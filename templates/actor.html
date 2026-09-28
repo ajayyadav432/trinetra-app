@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Actor{% endblock %}
+{% block content %}
+<div class="masthead">
+  <div>
+    <div class="eyebrow">§ 03 — entity register · actor</div>
+    <h2>{{ actor.handle }}</h2>
+  </div>
+  <div class="meta">
+    <span class="tag dark">{{ actor.category }}</span>
+    <span class="tag info">{{ actor.status }}</span>
+    confidence {{ actor.confidence }}%
+  </div>
+</div>
+
+<div class="grid g2">
+  <div class="panel">
+    <header><span class="t">Dossier</span><span class="r">actor #{{ actor.id }}</span></header>
+    <div class="body">
+      <div class="kv">
+        <div>handle</div><div>{{ actor.handle }}</div>
+        <div>aliases</div><div>{{ actor.aliases or '—' }}</div>
+        <div>category</div><div>{{ actor.category }}</div>
+        <div>status</div><div>{{ actor.status }}</div>
+        <div>confidence</div><div>{{ actor.confidence }} / 100</div>
+        <div>first seen</div><div>{{ actor.first_seen.strftime('%Y-%m-%d') if actor.first_seen else '—' }}</div>
+        <div>last seen</div><div>{{ actor.last_seen.strftime('%Y-%m-%d') if actor.last_seen else '—' }}</div>
+        <div>notes</div><div>{{ actor.notes or '—' }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <header><span class="t">Asserted links</span><span class="r">{{ links | length }}</span></header>
+    <div class="body tight">
+      <table>
+        <thead><tr><th>counterparty</th><th>method</th><th class="num">conf.</th></tr></thead>
+        <tbody>
+        {% for l in links %}
+          {% set other = l.actor_b if l.actor_a == actor.handle else l.actor_a %}
+          <tr>
+            <td>{{ other }}</td>
+            <td><span class="tag info">{{ l.method }}</span></td>
+            <td class="num">{{ l.confidence }}%</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="3" class="empty">no links asserted</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

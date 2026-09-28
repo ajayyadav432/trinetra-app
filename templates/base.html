@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}TRINETRA{% endblock %} · TRINETRA</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{"colors":{"tertiary-fixed-dim":"#fabc45","primary-container":"#f95c41","error":"#ffb4ab","surface-bright":"#3b3936","inverse-primary":"#b32a14","on-tertiary-fixed":"#271900","on-secondary":"#00390e","surface-dim":"#141311","on-tertiary":"#422c00","on-secondary-fixed":"#002106","background":"#141311","on-primary-fixed":"#3f0300","inverse-on-surface":"#32302e","on-surface-variant":"#e2beb8","on-tertiary-fixed-variant":"#5f4100","on-primary-container":"#590700","error-container":"#93000a","on-primary-fixed-variant":"#8f1100","surface-container-high":"#2b2a27","secondary-fixed":"#8bfb91","outline-variant":"#5a413c","inverse-surface":"#e6e2de","on-tertiary-container":"#392600","primary-fixed-dim":"#ffb4a6","surface-container-highest":"#363432","surface-tint":"#ffb4a6","tertiary-container":"#bd8708","tertiary-fixed":"#ffdeaa","on-surface":"#e6e2de","secondary":"#6fdd78","secondary-fixed-dim":"#6fdd78","primary-fixed":"#ffdad3","surface-container":"#211f1d","on-secondary-fixed-variant":"#005319","secondary-container":"#01872e","outline":"#a98983","surface-container-lowest":"#0f0e0c","on-error-container":"#ffdad6","tertiary":"#fabc45","on-secondary-fixed":"#002106","surface":"#141311","surface-container-low":"#1d1b19","surface-variant":"#363432","on-error":"#690005","on-secondary-container":"#f7fff1","primary":"#ffb4a6","on-primary":"#650900","on-tertiary-fixed":"#271900","on-background":"#e6e2de"},"fontFamily":{"headline":["Barlow Condensed","sans-serif"],"body":["JetBrains Mono","monospace"]},"fontSize":{"headline-xl":["32px",{lineHeight:"36px",letterSpacing:"0.05em"}],"headline-lg":["24px",{lineHeight:"28px",letterSpacing:"0.04em"}],"headline-md":["18px",{lineHeight:"22px",letterSpacing:"0.04em"}],"headline-sm":["14px",{lineHeight:"18px",letterSpacing:"0.05em"}],"body-lg":["14px",{lineHeight:"20px",letterSpacing:"-0.01em"}],"body-md":["12px",{lineHeight:"18px"}],"body-sm":["11px",{lineHeight:"16px"}],"label-md":["11px",{lineHeight:"14px",letterSpacing:"0.08em"}],"label-sm":["10px",{lineHeight:"12px",letterSpacing:"0.08em"}],"label-xs":["9px",{lineHeight:"12px",letterSpacing:"0.1em"}]},"spacing":{"gutter":"1px","space-xs":"0.25rem","space-sm":"0.5rem","space-md":"0.75rem","space-lg":"1rem","space-xl":"1.5rem"}}}}</script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/trinetra.css') }}">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect x='1' y='1' width='38' height='38' stroke='%2334322c' fill='%23141310'/%3E%3Ccircle cx='20' cy='20' r='7' stroke='%23d8452c' stroke-width='1.5' fill='none'/%3E%3Ccircle cx='20' cy='20' r='2.5' fill='%23d8452c'/%3E%3C/svg%3E">
+  {% block head %}{% endblock %}
+</head>
+<body class="bg-surface font-body-md text-on-surface antialiased selection:bg-primary selection:text-on-primary">
+
+  <!-- ============================================ top status bar -->
+  <header class="fixed top-0 left-0 right-0 z-50 h-14 bg-surface-container-lowest border-b border-surface-container-highest flex items-center justify-between px-space-md select-none">
+    <div class="flex items-center gap-space-md shrink-0">
+      <svg class="h-8 w-8 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" fill="none">
+        <rect x="1" y="1" width="38" height="38" stroke="#34322c" stroke-width="1" fill="#141310"/>
+        <circle cx="20" cy="20" r="14" stroke="#4a463d" stroke-width="1" stroke-dasharray="2 2"/>
+        <circle cx="20" cy="20" r="7" stroke="#d8452c" stroke-width="1.5"/>
+        <circle cx="20" cy="20" r="2.5" fill="#d8452c"/>
+        <line x1="20" y1="2" x2="20" y2="8" stroke="#d8452c" stroke-width="1.5"/>
+        <line x1="20" y1="32" x2="20" y2="38" stroke="#d8452c" stroke-width="1.5"/>
+        <line x1="2" y1="20" x2="8" y2="20" stroke="#d8452c" stroke-width="1.5"/>
+        <line x1="32" y1="20" x2="38" y2="20" stroke="#d8452c" stroke-width="1.5"/>
+        <path d="M12 12 L14 12 M12 12 L12 14" stroke="#a29d91" stroke-width="1"/>
+        <path d="M28 12 L26 12 M28 12 L28 14" stroke="#a29d91" stroke-width="1"/>
+        <path d="M12 28 L14 28 M12 28 L12 26" stroke="#a29d91" stroke-width="1"/>
+        <path d="M28 28 L26 28 M28 28 L28 26" stroke="#a29d91" stroke-width="1"/>
+      </svg>
+      <div class="flex items-baseline gap-space-sm">
+        <a href="{{ url_for('dash.home') }}" class="font-headline-md text-headline-md tracking-wider text-on-surface uppercase">TRINETRA</a>
+        <span class="font-label-xs text-label-xs text-outline tracking-widest uppercase">// threat intel workbench</span>
+      </div>
+      <div class="hidden xl:flex items-center px-space-xs py-0.5 bg-surface-container border border-outline-variant text-error font-label-xs text-label-xs tracking-wider">[ RESTRICTED // LE-ATTRIBUTION // PS-26151 ]</div>
+    </div>
+
+    <div class="hidden lg:flex items-center gap-space-sm px-space-md py-1 bg-surface-container-low border border-surface-container-high shrink-0">
+      <span class="h-2 w-2 rounded-full bg-secondary animate-pulse"></span>
+      <span class="font-label-xs text-label-xs text-on-surface tracking-wider font-mono">TOR CIRCUIT: 3 HOPS // SOCKS5: OK // RESOLUTION: ISOLATED</span>
+    </div>
+
+    <div class="flex items-center gap-space-md shrink-0">
+      <div class="hidden sm:flex flex-col text-right">
+        <span class="font-label-sm text-label-sm text-on-surface tracking-widest font-mono"><span id="clock">--:--:--</span> UTC</span>
+        <span class="font-label-xs text-label-xs text-outline tracking-wider uppercase">operator · {{ user or 'guest' }}</span>
+      </div>
+      <div class="w-8 h-8 bg-surface-container-high border border-outline-variant flex items-center justify-center shrink-0">
+        <span class="material-symbols-outlined text-on-surface text-[18px]">person</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============================================ module rail -->
+  <aside class="fixed left-0 top-14 bottom-0 w-72 bg-surface-container-lowest border-r border-surface-container-highest z-40 flex flex-col justify-between select-none">
+    <div class="flex-1 flex flex-col overflow-y-auto">
+      <div class="px-space-md py-space-sm border-b border-surface-container-high bg-surface-container-low flex items-center justify-between">
+        <span class="font-label-xs text-label-xs text-outline tracking-widest uppercase">operational modules</span>
+        <span class="font-label-xs text-label-xs text-secondary-fixed font-mono">SYSTEM READY</span>
+      </div>
+      {% set nav_items = [
+        ('01', 'dash.home',        'overview',         'Overview',         'chevron_right'),
+        ('02', 'scans.new',        'collection',       'Collection',       'chevron_right'),
+        ('03', 'intel.index',      'entity-register',  'Entity register',  'chevron_right'),
+        ('04', 'graph.page',       'link-graph',       'Link graph',       'chevron_right'),
+        ('05', 'styl.page',        'stylometry',       'Stylometry',       'chevron_right'),
+        ('06', 'ops.page',         'autonomous-ops',   'Autonomous ops',   'dot')
+      ] %}
+      {% set ep = request.endpoint or '' %}
+      <nav class="flex flex-col py-space-xs">
+        {% for n, endpoint, key, label, trail in nav_items %}
+        {% set active = (ep == endpoint)
+             or (key == 'collection' and ep.startswith('scans.'))
+             or (key == 'entity-register' and ep.startswith('intel.'))
+             or (key == 'link-graph' and ep.startswith('graph.'))
+             or (key == 'stylometry' and ep.startswith('styl.'))
+             or (key == 'autonomous-ops' and ep.startswith('ops.')) %}
+        <a href="{{ url_for(endpoint) }}"
+           class="group flex items-center justify-between px-space-md py-space-sm border-l-2 transition-colors {{ 'bg-surface-container-high text-primary border-primary-container font-semibold' if active else 'text-on-surface-variant hover:bg-surface-container hover:text-on-surface border-transparent' }}">
+          <div class="flex items-center gap-space-sm">
+            <span class="font-label-xs text-label-xs text-outline font-mono {{ 'text-error' if active else '' }}">{{ n }}</span>
+            <span class="font-label-md text-label-md tracking-wider uppercase">{{ label }}</span>
+          </div>
+          {% if trail == 'dot' %}
+          <span class="h-1.5 w-1.5 rounded-full bg-tertiary-fixed-dim"></span>
+          {% else %}
+          <span class="material-symbols-outlined text-outline text-[16px] group-hover:text-on-surface">chevron_right</span>
+          {% endif %}
+        </a>
+        {% endfor %}
+      </nav>
+    </div>
+
+    <div class="border-t border-surface-container-highest bg-surface-container-lowest p-space-md flex flex-col gap-space-sm">
+      <div class="p-space-xs bg-surface-container border border-outline-variant">
+        <div class="flex items-center justify-between mb-0.5">
+          <span class="font-label-xs text-label-xs text-outline uppercase">security level</span>
+          <span class="font-label-xs text-label-xs text-error font-mono font-bold">SEC-LEVEL 4</span>
+        </div>
+        <div class="font-label-xs text-label-xs text-on-surface font-mono break-all">DAEMON: tor-0.4.8.10 // SOCKS5: 9050 // 100% BOOTSTRAP</div>
+      </div>
+      <a href="{{ url_for('auth.logout') }}" class="w-full py-space-xs px-space-sm bg-transparent border border-error text-error hover:bg-error-container hover:text-on-error font-label-xs text-label-xs tracking-widest uppercase transition-colors flex items-center justify-center gap-space-xs">
+        <span class="material-symbols-outlined text-[14px]">logout</span>
+        <span>CLOSE SESSION</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- ============================================ workbench -->
+  <div class="pl-72">
+    <main class="relative w-full pt-14 bg-surface min-h-screen px-space-md py-space-md">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for cat, msg in messages %}
+        <div class="mb-space-md px-space-md py-space-sm border font-label-md uppercase tracking-widest {{ 'border-error text-error bg-error-container/10' if cat == 'err' else 'border-secondary text-secondary bg-secondary-container/10' }}">{{ msg }}</div>
+        {% endfor %}
+      {% endwith %}
+
+      {% block content %}{% endblock %}
+
+      <footer class="mt-space-xl pt-space-sm border-t border-surface-container-high flex flex-wrap items-center justify-between gap-space-sm">
+        <span class="font-label-xs text-label-xs text-outline tracking-widest uppercase">TRINETRA · local build · data at rest: sqlite</span>
+        <span class="font-label-xs text-label-xs text-outline tracking-widest uppercase">read-only collection · no exploitation of the anonymity network</span>
+      </footer>
+    </main>
+  </div>
+
+  <script>
+    (function tick(){
+      var el = document.getElementById('clock');
+      if (el) { el.textContent = new Date().toISOString().substr(11,8); }
+      setTimeout(tick, 1000);
+    })();
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

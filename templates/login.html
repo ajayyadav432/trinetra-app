@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Sign in{% endblock %}
+{% block content %}
+<div style="max-width:440px;margin:70px auto;">
+  <div class="panel">
+    <header>
+      <span class="t">Operator sign-in</span>
+      <span class="r">session 01 / 01</span>
+    </header>
+    <div class="body">
+      <p class="pill-note" style="margin-top:0">
+        Analytical console for dark-web threat actor attribution. Access is logged
+        against the signed-in operator. Bootstrap credential: <b>admin / admin</b>.
+      </p>
+      <form method="post">
+        <div class="field">
+          <label class="fl" for="u">Operator ID</label>
+          <input id="u" type="text" name="username" autocomplete="username" placeholder="admin">
+        </div>
+        <div class="field">
+          <label class="fl" for="p">Credential</label>
+          <input id="p" type="password" name="password" autocomplete="current-password" placeholder="••••••••">
+        </div>
+        <button class="btn solid" type="submit">Authenticate &amp; enter console</button>
+      </form>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="body" style="font-size:11px;color:var(--muted);line-height:1.8">
+      CAPABILITY 01 — infrastructure deanonymisation<br>
+      CAPABILITY 02 — cross-market identifier graph<br>
+      CAPABILITY 03 — stylometric persona linkage
+    </div>
+  </div>
+</div>
+{% endblock %}

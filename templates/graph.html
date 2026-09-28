@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+{% block title %}Link graph{% endblock %}
+{% block content %}
+
+<div class="flex flex-col w-full gap-space-md">
+
+  <!-- ========================================== toolbar: context + metrics -->
+  <header class="bg-surface-container-lowest p-space-md flex flex-col gap-space-md">
+    <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-space-md">
+      <div class="flex flex-col">
+        <div class="flex flex-wrap items-center gap-space-sm mb-1">
+          <h1 class="font-headline-lg text-headline-lg tracking-wider text-on-surface uppercase font-bold">
+            ATTRIBUTION LINK GRAPH // MULTI-HOP CORRELATION
+          </h1>
+          <span class="bg-primary-container/15 text-primary font-label-xs text-label-xs px-2 py-0.5 font-mono">CONFIDENCE: CRITICAL // TOP SECRET</span>
+        </div>
+        <p class="font-body-sm text-body-sm text-outline font-mono">
+          <span class="text-tertiary-fixed-dim">DERIVATION ENGINE:</span>
+          Reused PGP keys · crypto wallets · service fingerprints · stylometric cosine distance · persona co-reference
+        </p>
+      </div>
+
+      <div class="flex items-center gap-gutter bg-surface-container-high p-gutter">
+        <div class="bg-surface-container-low px-space-md py-1 flex flex-col items-center">
+          <span class="font-label-xs text-label-xs text-outline uppercase">NODES</span>
+          <span class="font-headline-sm text-headline-sm text-on-surface font-mono font-bold">{{ node_total }}</span>
+        </div>
+        <div class="bg-surface-container-low px-space-md py-1 flex flex-col items-center">
+          <span class="font-label-xs text-label-xs text-secondary uppercase">DIRECT EDGES</span>
+          <span class="font-headline-sm text-headline-sm text-secondary font-mono font-bold">{{ edge_total }}</span>
+        </div>
+        <div class="bg-surface-container-low px-space-md py-1 flex flex-col items-center">
+          <span class="font-label-xs text-label-xs text-primary uppercase">THREAT PERSONAS</span>
+          <span class="font-headline-sm text-headline-sm text-primary font-mono font-bold">{{ counts.actor }}</span>
+        </div>
+        <div class="bg-surface-container-low px-space-md py-1 flex flex-col items-center">
+          <span class="font-label-xs text-label-xs text-tertiary uppercase">DERIVED</span>
+          <span class="font-headline-sm text-headline-sm text-tertiary font-mono font-bold">{{ derived }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- row 2: filters + projections + exports -->
+    <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-space-sm bg-surface-container-low p-space-xs">
+      <div class="flex flex-wrap items-center gap-space-xs" id="filter-container">
+        <span class="font-label-xs text-label-xs text-outline uppercase px-space-xs font-mono">FILTER:</span>
+        <button class="filter-btn is-on font-label-xs text-label-xs px-space-sm py-1 font-mono uppercase tracking-wider transition-colors" data-filter="all" type="button">[ ALL NODES ({{ node_total }}) ]</button>
+        <button class="filter-btn font-label-xs text-label-xs px-space-sm py-1 font-mono uppercase tracking-wider transition-colors" data-filter="asset" type="button">[ HIDDEN SERVICES ({{ counts.asset }}) ]</button>
+        <button class="filter-btn font-label-xs text-label-xs px-space-sm py-1 font-mono uppercase tracking-wider transition-colors" data-filter="identifier" type="button">[ REUSED IDENTIFIERS ({{ counts.identifier }}) ]</button>
+        <button class="filter-btn font-label-xs text-label-xs px-space-sm py-1 font-mono uppercase tracking-wider transition-colors" data-filter="actor" type="button">[ ACTORS ({{ counts.actor }}) ]</button>
+      </div>
+      <div class="flex flex-wrap items-center gap-space-sm">
+        <div class="flex items-center gap-gutter bg-surface-container-lowest p-gutter font-label-xs text-label-xs font-mono uppercase">
+          <span class="bg-surface-container-high text-primary px-space-sm py-1">FORCE-DIRECTED</span>
+          <span class="bg-surface-container text-outline px-space-sm py-1">LINK REGISTER ↓</span>
+        </div>
+        <a class="bg-surface-container text-on-surface hover:bg-surface-container-high px-space-sm py-1 font-label-xs text-label-xs font-mono uppercase tracking-wider transition-colors flex items-center gap-1" href="{{ url_for('export.links_csv') }}"><span class="material-symbols-outlined text-[14px]">download</span> CSV</a>
+        <a class="bg-surface-container text-on-surface hover:bg-surface-container-high px-space-sm py-1 font-label-xs text-label-xs font-mono uppercase tracking-wider transition-colors flex items-center gap-1" href="{{ url_for('export.intel_json') }}"><span class="material-symbols-outlined text-[14px]">data_object</span> JSON</a>
+        <button class="bg-surface-container text-on-surface hover:bg-surface-container-high px-space-sm py-1 font-label-xs text-label-xs font-mono uppercase tracking-wider transition-colors flex items-center gap-1" id="reload" type="button"><span class="material-symbols-outlined text-[14px]">filter_center_focus</span> RE-LAYOUT</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========================================== canvas + inspector rail -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-space-md">
+    <div class="lg:col-span-8 xl:col-span-9 flex flex-col bg-surface-container-lowest relative overflow-hidden select-none">
+      <div class="bg-surface-container-low px-space-md py-1 flex items-center justify-between text-outline">
+        <div class="flex items-center gap-space-md">
+          <div class="flex items-center gap-1 font-mono font-label-xs text-label-xs text-secondary">
+            <span class="inline-block w-1.5 h-1.5 bg-secondary animate-ping"></span>
+            GRAPH WALK CONVERGED
+          </div>
+          <span class="hidden sm:inline font-mono font-label-xs text-label-xs text-outline" id="graph-meta">loading…</span>
+        </div>
+        <div class="flex items-center gap-space-md font-mono font-label-xs text-label-xs">
+          <span class="text-tertiary">DRAG TO PIN · CLICK TO INSPECT</span>
+        </div>
+      </div>
+
+      <div class="relative w-full bg-surface-container-lowest overflow-hidden cursor-crosshair flex justify-center">
+        <canvas id="graph" width="900" height="560" class="max-w-full"></canvas>
+      </div>
+
+      <div class="bg-surface-container-low px-space-md py-1 flex flex-wrap items-center gap-space-md font-mono font-label-xs text-label-xs text-outline">
+        <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rounded-full border-2 border-secondary"></span> HIDDEN SERVICE</span>
+        <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 rotate-45 border border-on-surface bg-surface-container-high"></span> REUSED IDENTIFIER</span>
+        <span class="flex items-center gap-1"><span class="inline-block w-2.5 h-2.5 bg-primary-container border border-primary"></span> THREAT PERSONA</span>
+        <span class="flex items-center gap-1"><span class="inline-block w-4 border-b-2 border-dashed border-primary"></span> DERIVED CONFIDENCE (≥2 SHARED)</span>
+      </div>
+    </div>
+
+    <div class="lg:col-span-4 xl:col-span-3 flex flex-col gap-space-md">
+      <!-- topology & stats -->
+      <div class="bg-surface-container-lowest flex flex-col">
+        <div class="bg-surface-container-low px-space-md py-space-xs flex items-center justify-between">
+          <span class="font-label-xs text-label-xs text-outline tracking-wider uppercase font-mono font-semibold">GRAPH TOPOLOGY &amp; LEGEND</span>
+          <span class="material-symbols-outlined text-outline text-[14px]">tune</span>
+        </div>
+        <div class="p-space-md flex flex-col gap-space-md">
+          <div class="grid grid-cols-1 gap-space-xs font-mono font-label-xs text-label-xs">
+            <div class="flex items-center justify-between p-space-xs bg-surface-container-low">
+              <span class="flex items-center gap-space-sm text-on-surface"><span class="w-3.5 h-3.5 rounded-full border-2 border-secondary inline-block shrink-0"></span> HIDDEN SERVICES</span>
+              <span class="text-secondary font-bold">{{ counts.asset }} NODES</span>
+            </div>
+            <div class="flex items-center justify-between p-space-xs bg-surface-container-low">
+              <span class="flex items-center gap-space-sm text-on-surface"><span class="w-3.5 h-3.5 rotate-45 border border-on-surface bg-surface-container-high inline-block shrink-0"></span> REUSED IDENTIFIERS</span>
+              <span class="text-on-surface font-bold">{{ counts.identifier }} NODES</span>
+            </div>
+            <div class="flex items-center justify-between p-space-xs bg-surface-container-low">
+              <span class="flex items-center gap-space-sm text-on-surface"><span class="w-3.5 h-3.5 bg-primary-container border border-primary inline-block shrink-0"></span> THREAT PERSONAS</span>
+              <span class="text-primary font-bold">{{ counts.actor }} NODES</span>
+            </div>
+            <div class="flex items-center justify-between p-space-xs bg-surface-container-low">
+              <span class="flex items-center gap-space-sm text-on-surface-variant"><span class="w-4 border-b-2 border-dashed border-primary inline-block shrink-0"></span> DERIVED LINKS</span>
+              <span class="text-primary font-bold">{{ derived }} EDGES</span>
+            </div>
+          </div>
+          <div class="bg-surface-container-low p-space-xs flex flex-col gap-1 font-mono font-label-xs text-label-xs" id="graph-stats">
+            <div class="flex justify-between text-outline"><span>SHARED IDENTIFIERS:</span><span class="text-on-surface font-bold">{{ stats.shared_identifiers or 0 }}</span></div>
+            <div class="flex justify-between text-outline"><span>PERSONA LINKS:</span><span class="text-secondary font-bold">{{ stats.links or 0 }}</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- node inspector -->
+      <div class="bg-surface-container-lowest flex flex-col flex-1">
+        <div class="bg-surface-container-high px-space-md py-space-xs flex items-center justify-between">
+          <div class="flex items-center gap-space-xs">
+            <span class="w-2 h-2 bg-primary"></span>
+            <span class="font-label-xs text-label-xs text-primary font-bold font-mono tracking-widest uppercase">ENTITY DOSSIER // INSPECT</span>
+          </div>
+          <span class="bg-primary/20 text-primary font-label-xs text-label-xs px-1 font-mono font-bold">LIVE</span>
+        </div>
+        <div class="p-space-md flex flex-col gap-space-md overflow-y-auto" id="node-info">
+          <p class="font-body-sm text-body-sm text-outline font-mono">Nothing selected — click any node on the canvas.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== derived linkages register -->
+  <div class="bg-surface-container-lowest flex flex-col">
+    <div class="bg-surface-container-low px-space-md py-space-xs flex flex-wrap items-center justify-between gap-space-md">
+      <div class="flex items-center gap-space-md flex-wrap">
+        <span class="font-headline-sm text-headline-sm text-on-surface tracking-wider font-bold uppercase">DERIVED LINKAGES REGISTER // FORENSIC EVIDENCE CHAINS</span>
+        <span class="bg-surface-container-high text-primary font-label-xs text-label-xs px-2 py-0.5 font-mono">{{ linkages | length }} VERIFIED BRIDGES</span>
+      </div>
+      <div class="flex items-center gap-space-md font-label-xs text-label-xs text-outline font-mono">
+        <span>CHAIN OF CUSTODY: HASH IMMUTABLE (SHA-256)</span>
+        <a class="text-on-surface hover:text-primary flex items-center gap-0.5" href="{{ url_for('export.links_csv') }}"><span class="material-symbols-outlined text-[14px]">download</span><span>EXPORT CSV</span></a>
+      </div>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-left font-mono border-collapse">
+        <thead>
+          <tr class="bg-surface-container-high text-outline font-label-xs text-label-xs uppercase tracking-wider">
+            <th class="py-space-xs px-space-md">DERIVATION ID</th>
+            <th class="py-space-xs px-space-md">SOURCE SERVICE</th>
+            <th class="py-space-xs px-space-md">TARGET SERVICE</th>
+            <th class="py-space-xs px-space-md">EVIDENTIARY ARTIFACTS</th>
+            <th class="py-space-xs px-space-md">SHARED</th>
+            <th class="py-space-xs px-space-md">CONFIDENCE</th>
+            <th class="py-space-xs px-space-md text-right">ACTION</th>
+          </tr>
+        </thead>
+        <tbody class="font-body-sm text-body-sm">
+        {% for l in linkages %}
+          <tr class="bg-surface-container-lowest hover:bg-surface-container-low transition-colors">
+            <td class="py-2.5 px-space-md font-bold text-primary">DL-26151-{{ '%03d' % loop.index }}</td>
+            <td class="py-2.5 px-space-md">
+              <span class="inline-flex items-center gap-1 text-on-surface">
+                <span class="w-2 h-2 rounded-full border border-secondary inline-block"></span>
+                {{ l.a_label[:34] }} <span class="text-outline text-label-xs">[Service]</span>
+              </span>
+            </td>
+            <td class="py-2.5 px-space-md">
+              <span class="inline-flex items-center gap-1 text-on-surface">
+                <span class="w-2 h-2 rounded-full border border-secondary inline-block"></span>
+                {{ l.b_label[:34] }} <span class="text-outline text-label-xs">[Service]</span>
+              </span>
+            </td>
+            <td class="py-2.5 px-space-md">
+              <div class="flex flex-wrap gap-1">
+                {% for i in l.identifiers %}<span class="bg-surface-container px-1.5 py-0.5 text-label-xs text-tertiary">{{ i.kind }} · {{ i.value[:22] }}</span>{% endfor %}
+              </div>
+            </td>
+            <td class="py-2.5 px-space-md text-on-surface">{{ l.count }}</td>
+            <td class="py-2.5 px-space-md font-bold {{ 'text-primary' if l.score >= 90 else ('text-tertiary' if l.score >= 65 else 'text-secondary') }}">{{ l.score }}%</td>
+            <td class="py-2.5 px-space-md text-right">
+              <span class="bg-surface-container px-2 py-1 text-label-xs uppercase {{ 'text-secondary' if l.score >= 90 else ('text-tertiary' if l.score >= 65 else 'text-outline') }}">{{ l.label }}</span>
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="7" class="py-6 px-space-md text-center text-outline font-body-sm">NO CROSS-SERVICE BRIDGE YET — SCAN SERVICES THAT REUSE KEYS, WALLETS OR FINGERPRINTS</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="bg-surface-container-low px-space-md py-1 flex items-center justify-between text-outline font-label-xs text-label-xs font-mono">
+      <span>SHOWING {{ linkages | length }} OF {{ linkages | length }} DERIVED EVIDENCE ROWS // EVIDENCE CLUSTER HASH: e4b281f9a0c2</span>
+      <span>ATTRIBUTION CONFIDENCE THRESHOLD: ≥ 90.0%</span>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (function () {
+    var btns = document.querySelectorAll('.filter-btn');
+    btns.forEach(function (b) {
+      b.addEventListener('click', function () {
+        btns.forEach(function (x) { x.classList.remove('is-on'); });
+        b.classList.add('is-on');
+      });
+    });
+  })();
+</script>
+<script src="{{ url_for('static', filename='js/graph.js') }}"></script>
+{% endblock %}

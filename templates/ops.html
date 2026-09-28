@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Autonomous ops{% endblock %}
+{% block content %}
+<div class="masthead">
+  <div>
+    <div class="eyebrow">§ 06 — autonomous mode</div>
+    <h2>Scheduled collection &amp; exports</h2>
+  </div>
+  <div class="meta">
+    scheduler · heartbeat 20s<br>
+    jobs · {{ jobs | length }}
+  </div>
+</div>
+
+<div class="grid g2">
+  <div class="panel">
+    <header><span class="t">Schedule a collection pass</span><span class="r">cron-free intervals</span></header>
+    <div class="body">
+      <form method="post" action="{{ url_for('ops.add_job') }}">
+        <div class="field">
+          <label class="fl" for="name">Job name</label>
+          <input id="name" type="text" name="name" placeholder="market mirror watch">
+        </div>
+        <div class="field">
+          <label class="fl" for="target">Target</label>
+          <input id="target" type="text" name="target" placeholder="http://…onion" required>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label class="fl" for="route">Route</label>
+            <select id="route" name="route">
+              <option value="tor">Tor SOCKS5</option>
+              <option value="direct">Direct</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="fl" for="interval">Interval (minutes)</label>
+            <input id="interval" type="number" name="interval" value="30" min="1">
+          </div>
+        </div>
+        <button class="btn solid" type="submit">Schedule job</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="panel">
+    <header><span class="t">Result-set exports</span><span class="r">csv · json · report</span></header>
+    <div class="body">
+      <p class="pill-note" style="margin-top:0">Everything the register holds, in analyst formats.</p>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        <a class="btn" href="{{ url_for('export.assets_csv') }}">assets.csv</a>
+        <a class="btn" href="{{ url_for('export.identifiers_csv') }}">identifiers.csv</a>
+        <a class="btn" href="{{ url_for('export.actors_csv') }}">actors.csv</a>
+        <a class="btn" href="{{ url_for('export.links_csv') }}">persona-links.csv</a>
+        <a class="btn" href="{{ url_for('export.intel_json') }}">intel.json</a>
+        <a class="btn" href="{{ url_for('scans.index') }}">per-run pdf reports →</a>
+      </div>
+      <p class="pill-note" style="margin-bottom:0">
+        PDF dossiers are generated per collection run from its findings and transcript.
+      </p>
+    </div>
+  </div>
+</div>
+
+<div class="section-head"><span class="sn">§</span><h3>Scheduled jobs</h3>
+  <span class="sh">{{ jobs | selectattr('enabled') | list | length }} enabled</span></div>
+<div class="panel"><div class="body tight">
+  <table>
+    <thead><tr><th>#</th><th>name</th><th>target</th><th>route</th><th class="num">every</th>
+      <th>state</th><th>last run</th><th></th></tr></thead>
+    <tbody>
+    {% for j in jobs %}
+      <tr>
+        <td class="dim">{{ j.id }}</td>
+        <td>{{ j.name }}</td>
+        <td class="wrap mono">{{ j.target }}</td>
+        <td><span class="tag {{ 'dark' if j.route == 'tor' else 'info' }}">{{ j.route }}</span></td>
+        <td class="num">{{ j.interval_minutes }} min</td>
+        <td>
+          {% if j.enabled %}<span class="tag ok">enabled</span>{% else %}<span class="tag info">paused</span>{% endif %}
+          {% if j.last_status %}<span class="tag blue">{{ j.last_status }}</span>{% endif %}
+        </td>
+        <td class="dim">{{ j.last_run.strftime('%Y-%m-%d %H:%M:%S') if j.last_run else 'never' }}</td>
+        <td style="white-space:nowrap">
+          <form method="post" action="{{ url_for('ops.run_now', job_id=j.id) }}" style="display:inline">
+            <button class="btn small accent" type="submit">run now</button>
+          </form>
+          <form method="post" action="{{ url_for('ops.toggle', job_id=j.id) }}" style="display:inline">
+            <button class="btn small" type="submit">{{ 'pause' if j.enabled else 'resume' }}</button>
+          </form>
+          <form method="post" action="{{ url_for('ops.delete', job_id=j.id) }}" style="display:inline">
+            <button class="btn small" type="submit">delete</button>
+          </form>
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="8" class="empty">no jobs scheduled</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div></div>
+{% endblock %}

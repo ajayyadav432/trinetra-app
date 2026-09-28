@@ -1,0 +1,292 @@
+{% extends "base.html" %}
+{% block title %}Overview{% endblock %}
+{% block content %}
+
+<!-- ============================================ case header -->
+<section class="border border-surface-container-high bg-surface-container-lowest mb-space-md">
+  <div class="flex flex-col lg:flex-row lg:items-center justify-between border-b border-surface-container-high p-space-md gap-space-md">
+    <div class="flex flex-col gap-space-xs">
+      <div class="flex items-center gap-space-sm flex-wrap">
+        <span class="px-space-xs py-0.5 bg-primary-container text-on-primary font-label-xs text-label-xs uppercase tracking-widest font-bold">CLASSIFIED // ATTRIBUTION DOSSIER</span>
+        <span class="text-outline font-label-xs text-label-xs tracking-wider">PS-26151 · NTRO</span>
+        <span class="text-tertiary font-label-xs text-label-xs tracking-wider font-mono">[CHAIN OF CUSTODY VALIDATED]</span>
+      </div>
+      <h1 class="font-headline-lg text-headline-lg tracking-wider text-on-surface uppercase font-bold">
+        CASE OPERATIONAL SUMMARY // THREE-EYES ATTRIBUTION WORKBENCH
+      </h1>
+    </div>
+    <div class="flex items-center gap-space-sm shrink-0">
+      <a class="px-space-md py-space-xs bg-primary-container hover:bg-inverse-primary text-on-primary font-label-sm text-label-sm tracking-widest uppercase transition-colors flex items-center gap-space-xs" href="{{ url_for('scans.new') }}">
+        <span class="material-symbols-outlined text-[16px]">radar</span><span>+ INITIATE RECON SWEEP</span>
+      </a>
+      <a class="px-space-md py-space-xs bg-surface-container hover:bg-surface-container-high text-on-surface border border-surface-container-highest font-label-sm text-label-sm tracking-widest uppercase transition-colors flex items-center gap-space-xs" href="{{ url_for('export.intel_json') }}">
+        <span class="material-symbols-outlined text-[16px]">download</span><span>EXPORT SITREP</span>
+      </a>
+    </div>
+  </div>
+  <div class="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-surface-container-high bg-surface-container-low font-mono font-label-xs text-label-xs">
+    <div class="px-space-md py-space-xs flex items-center gap-space-sm">
+      <span class="text-outline uppercase">LAST SWEEP:</span>
+      <span class="text-on-surface font-semibold">{{ recent[0].started_at.strftime('%Y-%m-%d %H:%M:%S') ~ ' UTC' if recent and recent[0].started_at else '—' }}</span>
+    </div>
+    <div class="px-space-md py-space-xs flex items-center gap-space-sm">
+      <span class="text-outline uppercase">TARGET SCOPE:</span>
+      <span class="text-on-surface">V3 HIDDEN SERVICES &amp; ESCROW FORUMS</span>
+    </div>
+    <div class="px-space-md py-space-xs flex items-center justify-between">
+      <div class="flex items-center gap-space-sm">
+        <span class="text-outline uppercase">OPERATIONAL CLEARANCE:</span>
+        <span class="text-error font-bold">LEVEL-3 ATTRIBUTION</span>
+      </div>
+      <span class="text-outline font-label-xs text-label-xs">LE-AFFIDAVIT: OK</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================ stat tiles -->
+<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-gutter bg-surface-container-high mb-space-md">
+  <div class="bg-surface-container-lowest p-space-md flex flex-col justify-between hover:bg-surface-container-low transition-colors">
+    <div class="flex items-center justify-between text-outline mb-space-sm">
+      <span class="font-label-xs text-label-xs tracking-widest uppercase">SERVICES UNDER WATCH</span>
+      <span class="text-secondary font-label-xs text-label-xs font-mono font-bold">[{{ stats.open }} THIS WEEK]</span>
+    </div>
+    <div class="font-headline-xl text-headline-xl text-on-surface tracking-wider font-mono font-bold mb-space-xs">{{ stats.assets }}</div>
+    <div class="text-outline font-label-xs text-label-xs flex items-center justify-between pt-space-xs border-t border-surface-container-high">
+      <span>{{ stats.live }} reachable</span>
+      <span class="text-on-surface-variant font-mono">entity store · sqlite</span>
+    </div>
+  </div>
+
+  <div class="bg-surface-container-lowest p-space-md flex flex-col justify-between hover:bg-surface-container-low transition-colors">
+    <div class="flex items-center justify-between text-outline mb-space-sm">
+      <span class="font-label-xs text-label-xs tracking-widest uppercase">COLLECTION RUNS</span>
+      <span class="text-tertiary font-label-xs text-label-xs font-mono">DAEMONS: ACTIVE</span>
+    </div>
+    <div class="font-headline-xl text-headline-xl text-on-surface tracking-wider font-mono font-bold mb-space-xs">{{ stats.scans }}</div>
+    <div class="text-outline font-label-xs text-label-xs flex items-center justify-between pt-space-xs border-t border-surface-container-high">
+      <span class="text-secondary font-mono">{{ stats.findings }} FINDINGS</span>
+      <span class="text-on-surface-variant font-mono">13 MODULES / RUN</span>
+    </div>
+  </div>
+
+  <div class="bg-surface-container-lowest p-space-md flex flex-col justify-between hover:bg-surface-container-low transition-colors relative border-l-2 border-primary-container">
+    <div class="flex items-center justify-between text-outline mb-space-sm">
+      <span class="font-label-xs text-label-xs tracking-widest uppercase text-primary">REUSED IDENTIFIERS</span>
+      <span class="px-space-xs py-0.5 bg-error-container text-on-error-container font-label-xs text-label-xs font-mono font-bold tracking-wider">HIGH ATTRIB</span>
+    </div>
+    <div class="font-headline-xl text-headline-xl text-primary tracking-wider font-mono font-bold mb-space-xs">{{ stats.shared }}</div>
+    <div class="text-outline font-label-xs text-label-xs flex items-center justify-between pt-space-xs border-t border-surface-container-high">
+      <span>OF {{ stats.identifiers }} HARVESTED</span>
+      <span class="text-outline-variant font-mono">|</span>
+      <span class="text-on-surface-variant font-mono">CROSS-SERVICE PIVOTS</span>
+    </div>
+  </div>
+
+  <div class="bg-surface-container-lowest p-space-md flex flex-col justify-between hover:bg-surface-container-low transition-colors">
+    <div class="flex items-center justify-between text-outline mb-space-sm">
+      <span class="font-label-xs text-label-xs tracking-widest uppercase">ACTOR RECORDS</span>
+      <span class="text-secondary font-label-xs text-label-xs font-mono font-bold">[{{ stats.links }} LINKS ASSERTED]</span>
+    </div>
+    <div class="font-headline-xl text-headline-xl text-on-surface tracking-wider font-mono font-bold mb-space-xs">{{ stats.actors }}</div>
+    <div class="text-outline font-label-xs text-label-xs flex items-center justify-between pt-space-xs border-t border-surface-container-high">
+      <span class="text-error font-semibold">{{ stats.links }} PERSONA LINKS</span>
+      <span class="text-tertiary font-mono">{{ stats.posts }} SAMPLES</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================ the three capabilities -->
+<section class="border border-surface-container-high bg-surface-container-lowest mb-space-md">
+  <div class="px-space-md py-space-sm bg-surface-container-low border-b border-surface-container-high flex items-center justify-between">
+    <div class="flex items-center gap-space-sm">
+      <span class="material-symbols-outlined text-outline text-[16px]">key</span>
+      <span class="font-headline-sm text-headline-sm uppercase tracking-wider text-on-surface">THE THREE CAPABILITIES // PROBLEM STATEMENT MANDATE</span>
+    </div>
+    <span class="font-label-xs text-label-xs text-outline font-mono">PS-26151</span>
+  </div>
+  <div class="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-surface-container-high">
+    {% for p in pillars %}
+    <div class="p-space-md flex flex-col gap-space-xs hover:bg-surface-container-low transition-colors">
+      <div class="flex items-center justify-between">
+        <span class="font-label-xs text-label-xs text-primary font-mono font-bold">[{{ p.n }}]</span>
+        <a class="font-label-xs text-label-xs text-outline uppercase font-mono tracking-wider hover:text-on-surface flex items-center gap-0.5" href="{{ url_for(p.href) }}">[OPEN]<span class="material-symbols-outlined text-[12px]">open_in_new</span></a>
+      </div>
+      <span class="font-headline-sm text-headline-sm uppercase tracking-wider text-on-surface">{{ p.title }}</span>
+      <p class="font-mono text-body-sm text-outline m-0">{{ p.body }}</p>
+      <div class="mt-space-xs pt-space-xs border-t border-surface-container-high flex items-baseline gap-space-sm">
+        <span class="font-headline-md text-headline-md text-tertiary font-mono font-bold">{{ p.value }}</span>
+        <span class="font-label-xs text-label-xs text-outline uppercase">{{ p.unit }}</span>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- ============================================ analytics -->
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-space-md mb-space-md">
+  <!-- severity + topology -->
+  <div class="lg:col-span-7 border border-surface-container-high bg-surface-container-lowest flex flex-col">
+    <div class="px-space-md py-space-sm bg-surface-container-low border-b border-surface-container-high flex items-center justify-between">
+      <div class="flex items-center gap-space-sm">
+        <span class="material-symbols-outlined text-outline text-[16px]">pie_chart</span>
+        <span class="font-headline-sm text-headline-sm uppercase tracking-wider text-on-surface">SEVERITY &amp; INFRASTRUCTURE DISTRIBUTION</span>
+      </div>
+      <span class="font-label-xs text-label-xs text-outline font-mono">TOTAL FINDINGS: {{ stats.findings }}</span>
+    </div>
+    <div class="p-space-md flex flex-col gap-space-md">
+      {% set total = sev.values() | sum %}
+      <div class="flex flex-col gap-space-xs">
+        <div class="flex items-center justify-between font-label-xs text-label-xs text-outline uppercase tracking-wider">
+          <span>SEVERITY CLASSIFICATION INDEX</span>
+          <span class="font-mono text-on-surface">ALL RUNS</span>
+        </div>
+        <div class="w-full h-4 bg-surface-container flex overflow-hidden border border-surface-container-high">
+          <div class="bg-primary-container h-full" style="width: {{ (100 * sev.get('critical', 0) / total) if total else 0 }}%"></div>
+          <div class="bg-tertiary-container h-full" style="width: {{ (100 * sev.get('high', 0) / total) if total else 0 }}%"></div>
+          <div class="bg-outline h-full" style="width: {{ (100 * sev.get('medium', 0) / total) if total else 0 }}%"></div>
+          <div class="bg-secondary-container h-full" style="width: {{ (100 * (sev.get('low', 0) + sev.get('info', 0)) / total) if total else 0 }}%"></div>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-space-sm pt-space-xs font-mono font-label-xs text-label-xs">
+          <div class="flex items-center gap-space-xs"><span class="w-2 h-2 bg-primary-container shrink-0"></span><span class="text-outline uppercase">CRIT:</span><span class="text-error font-bold">{{ sev.get('critical', 0) }}</span></div>
+          <div class="flex items-center gap-space-xs"><span class="w-2 h-2 bg-tertiary-container shrink-0"></span><span class="text-outline uppercase">HIGH:</span><span class="text-tertiary font-bold">{{ sev.get('high', 0) }}</span></div>
+          <div class="flex items-center gap-space-xs"><span class="w-2 h-2 bg-outline shrink-0"></span><span class="text-outline uppercase">MED:</span><span class="text-on-surface font-bold">{{ sev.get('medium', 0) }}</span></div>
+          <div class="flex items-center gap-space-xs"><span class="w-2 h-2 bg-secondary-container shrink-0"></span><span class="text-outline uppercase">LOW:</span><span class="text-secondary font-bold">{{ sev.get('low', 0) }}</span></div>
+          <div class="flex items-center gap-space-xs"><span class="w-2 h-2 shrink-0" style="background:#4a463d"></span><span class="text-outline uppercase">INFO:</span><span class="text-on-surface font-bold">{{ sev.get('info', 0) }}</span></div>
+        </div>
+        {% if not total %}<div class="font-mono text-body-sm text-outline">NO FINDINGS YET — START A COLLECTION RUN</div>{% endif %}
+      </div>
+
+      <div class="border-t border-surface-container-high"></div>
+
+      <div class="flex flex-col gap-space-sm">
+        <div class="flex items-center justify-between font-label-xs text-label-xs text-outline uppercase tracking-wider">
+          <span>SERVICE TOPOLOGY MATRIX</span>
+          <span class="font-mono">VOLUME SHARE</span>
+        </div>
+        <div class="flex flex-col gap-space-xs font-mono text-body-sm">
+          {% set colors = ['bg-primary', 'bg-primary-container', 'bg-tertiary', 'bg-outline', 'bg-secondary'] %}
+          {% for cat, c in categories.items() %}
+          <div class="flex flex-col p-space-xs bg-surface-container-low hover:bg-surface-container transition-colors">
+            <div class="flex items-center justify-between text-on-surface mb-1">
+              <span class="flex items-center gap-space-xs">
+                <span class="text-outline font-label-xs text-label-xs">{{ '%02d' % loop.index }}</span>
+                <span>{{ cat }}</span>
+              </span>
+              <span class="font-bold">{{ c }} <span class="text-outline text-label-xs font-normal">nodes ({{ '%.1f' % (100 * c / stats.assets) if stats.assets else 0 }}%)</span></span>
+            </div>
+            <div class="w-full h-1.5 bg-surface-container-lowest overflow-hidden">
+              <div class="h-full {{ colors[(loop.index0) % colors|length] }}" style="width: {{ (100 * c / stats.assets) if stats.assets else 0 }}%;"></div>
+            </div>
+          </div>
+          {% else %}
+          <div class="font-mono text-body-sm text-outline">INVENTORY EMPTY</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- persona links -->
+  <div class="lg:col-span-5 border border-surface-container-high bg-surface-container-lowest flex flex-col">
+    <div class="px-space-md py-space-sm bg-surface-container-low border-b border-surface-container-high flex items-center justify-between">
+      <div class="flex items-center gap-space-sm">
+        <span class="material-symbols-outlined text-outline text-[16px]">fingerprint</span>
+        <span class="font-headline-sm text-headline-sm uppercase tracking-wider text-on-surface">STRONGEST PERSONA LINKS</span>
+      </div>
+      <span class="px-space-xs py-0.5 border border-error text-error font-label-xs text-label-xs tracking-wider uppercase">EVIDENCE-BACKED</span>
+    </div>
+    <div class="p-space-md flex-1 flex flex-col justify-between gap-space-sm">
+      <div class="flex flex-col gap-space-xs">
+        {% for l in top_links %}
+        {% set high = l.confidence >= 85 %}
+        <div class="p-space-sm border-l-2 {{ 'border-secondary' if high else 'border-tertiary' }} bg-surface-container-low hover:bg-surface-container transition-colors flex flex-col gap-1">
+          <div class="flex items-center justify-between gap-space-sm">
+            <span class="font-mono text-body-md font-bold text-on-surface break-all">{{ l.actor_a }} &lt;--&gt; {{ l.actor_b }}</span>
+            <span class="px-space-xs py-0.5 {{ 'bg-secondary-container text-on-secondary-container' if high else 'bg-tertiary-container text-on-tertiary' }} font-label-xs text-label-xs font-mono font-bold shrink-0">{{ l.confidence }}% MATCH</span>
+          </div>
+          <p class="font-mono text-body-sm text-outline m-0">Evidence: {{ l.method }} linkage · confidence {{ l.confidence }}%</p>
+          <div class="flex items-center justify-between pt-1">
+            <span class="font-label-xs text-label-xs uppercase font-mono {{ 'text-secondary' if high else 'text-tertiary' }}">PIVOT: {{ l.method | upper }}</span>
+            <a class="text-primary hover:text-on-surface font-label-xs text-label-xs uppercase font-mono tracking-wider hover:underline flex items-center gap-0.5" href="{{ url_for('styl.page') }}"><span>[VIEW DOSSIER]</span><span class="material-symbols-outlined text-[12px]">open_in_new</span></a>
+          </div>
+        </div>
+        {% else %}
+        <div class="font-mono text-body-sm text-outline">NO LINKS ASSERTED — RUN STYLOMETRY OR THE REGISTER</div>
+        {% endfor %}
+      </div>
+      <div class="p-space-xs bg-surface-container text-outline font-label-xs text-label-xs border border-surface-container-high flex items-center justify-between">
+        <span class="font-mono">SCORER: FUNCTION-WORD · N-GRAM · SHAPE</span>
+        <span class="text-on-surface font-mono">THRESHOLD ≥ 0.85</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================ tables -->
+<section class="grid grid-cols-1 xl:grid-cols-2 gap-space-md">
+  <div class="border border-surface-container-high bg-surface-container-lowest flex flex-col">
+    <div class="px-space-md py-space-sm bg-surface-container-low border-b border-surface-container-high flex items-center justify-between">
+      <div class="flex items-center gap-space-sm">
+        <span class="material-symbols-outlined text-outline text-[16px]">hub</span>
+        <span class="font-headline-sm text-headline-sm uppercase tracking-wider text-on-surface">BRIDGING IDENTIFIERS</span>
+      </div>
+      <a class="font-label-xs text-label-xs text-primary font-mono" href="{{ url_for('intel.index') }}">[FULL REGISTER]</a>
+    </div>
+    <table>
+      <thead><tr><th>TYPE</th><th>IDENTIFIER VALUE</th><th class="num">PIVOTED</th></tr></thead>
+      <tbody>
+      {% for i in reused %}
+        <tr>
+          <td><span class="tag blue">{{ i.kind }}</span></td>
+          <td class="wrap">{{ i.display }}</td>
+          <td class="num"><span class="tag {{ 'critical' if i.mentions | map(attribute='asset_id') | unique | list | length >= 3 else 'medium' }}">{{ i.mentions | map(attribute='asset_id') | unique | list | length }} onions</span></td>
+        </tr>
+      {% else %}
+        <tr><td colspan="3" class="empty">NO IDENTIFIER APPEARS ON MORE THAN ONE SERVICE YET</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <div class="px-space-md py-space-xs border-t border-surface-container-high flex items-center justify-between font-label-xs text-label-xs text-outline uppercase">
+      <span>SHOWING {{ reused | length }} OF {{ stats.identifiers }} HARVESTED PIVOTS</span>
+      <a href="{{ url_for('graph.page') }}" class="font-mono text-primary hover:text-on-surface">[EXPLORE GRAPH &gt;&gt;]</a>
+    </div>
+  </div>
+
+  <div class="border border-surface-container-high bg-surface-container-lowest flex flex-col">
+    <div class="px-space-md py-space-sm bg-surface-container-low border-b border-surface-container-high flex items-center justify-between">
+      <div class="flex items-center gap-space-sm">
+        <span class="material-symbols-outlined text-outline text-[16px]">history</span>
+        <span class="font-headline-sm text-headline-sm uppercase tracking-wider text-on-surface">RECENT COLLECTION RUNS</span>
+      </div>
+      <span class="flex items-center gap-1 font-label-xs text-label-xs text-secondary font-mono"><span class="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span>DAEMONS ACTIVE</span>
+    </div>
+    <table>
+      <thead>
+        <tr><th>RUN</th><th>TARGET ONION</th><th>ROUTE</th><th>MODULES</th><th class="num">FINDINGS</th><th>STATUS</th></tr>
+      </thead>
+      <tbody>
+      {% for s in recent %}
+        <tr>
+          <td class="dim">RUN-{{ '%04d' % s.id }}</td>
+          <td class="wrap"><a href="{{ url_for('scans.detail', scan_id=s.id) }}">{{ s.target[:34] }}{{ '…' if s.target and s.target|length > 34 else '' }}</a></td>
+          <td><span class="tag {{ 'dark' if s.route == 'tor' else 'info' }}">{{ s.route }}</span></td>
+          <td class="mono">{{ s.checks_done }}/{{ s.checks_total }}</td>
+          <td class="num">{{ s.findings_total }}</td>
+          <td><span class="tag {{ 'ok' if s.status == 'done' else ('critical' if s.status == 'failed' else 'medium') }}">{{ s.status }}</span></td>
+        </tr>
+      {% else %}
+        <tr><td colspan="6" class="empty">NO RUNS YET</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <div class="px-space-md py-space-xs border-t border-surface-container-high flex items-center justify-between font-label-xs text-label-xs text-outline uppercase">
+      <span>{{ recent | length }} LATEST OF {{ stats.scans }}</span>
+      <span class="flex gap-3">
+        <a href="{{ url_for('scans.index') }}" class="font-mono text-primary hover:text-on-surface">[HISTORY]</a>
+        <a href="{{ url_for('scans.new') }}" class="font-mono text-primary hover:text-on-surface">[NEW RUN]</a>
+      </span>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

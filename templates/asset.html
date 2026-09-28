@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Service record{% endblock %}
+{% block content %}
+<div class="masthead">
+  <div>
+    <div class="eyebrow">§ 03 — entity register · service</div>
+    <h2 style="word-break:break-all">{{ asset.title or asset.label or asset.url }}</h2>
+  </div>
+  <div class="meta">
+    {% if asset.alive is none %}<span class="tag info">unscanned</span>
+    {% elif asset.alive %}<span class="tag ok">live</span>
+    {% else %}<span class="tag high">dark</span>{% endif %}
+    <span class="tag dark">{{ asset.category }}</span>
+    <span class="tag info">{{ asset.source }}</span>
+  </div>
+</div>
+
+<div class="grid g2">
+  <div class="panel">
+    <header><span class="t">Record</span><span class="r">asset #{{ asset.id }}</span></header>
+    <div class="body">
+      <div class="kv">
+        <div>address</div><div class="mono wrap">{{ asset.url }}</div>
+        <div>title</div><div>{{ asset.title or '—' }}</div>
+        <div>status code</div><div>{{ asset.status_code or '—' }}</div>
+        <div>server banner</div><div class="mono">{{ asset.server_banner or '—' }}</div>
+        <div>certificate subject</div><div class="mono wrap">{{ asset.cert_subject or '—' }}</div>
+        <div>certificate org</div><div class="mono">{{ asset.cert_org or '—' }}</div>
+        <div>favicon hash</div><div class="mono wrap">{{ asset.favicon_hash or '—' }}</div>
+        <div>first seen</div><div>{{ asset.first_seen.strftime('%Y-%m-%d %H:%M') }}</div>
+        <div>last scan</div><div>{{ asset.last_scan.strftime('%Y-%m-%d %H:%M') if asset.last_scan else 'never' }}</div>
+        <div>notes</div><div>{{ asset.notes or '—' }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <header><span class="t">Collection runs</span><span class="r">{{ scans | length }}</span></header>
+    <div class="body tight">
+      <table>
+        <thead><tr><th>#</th><th>status</th><th class="num">findings</th><th>when</th></tr></thead>
+        <tbody>
+        {% for s in scans %}
+          <tr>
+            <td><a href="{{ url_for('scans.detail', scan_id=s.id) }}">{{ s.id }}</a></td>
+            <td><span class="tag {{ 'ok' if s.status == 'done' else 'medium' }}">{{ s.status }}</span></td>
+            <td class="num">{{ s.findings_total }}</td>
+            <td class="dim">{{ s.started_at.strftime('%m-%d %H:%M') }}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="4" class="empty">no runs against this service</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="section-head"><span class="sn">§</span><h3>Identifiers observed here</h3>
+  <span class="sh">and where else they reappear</span></div>
+<div class="panel"><div class="body tight">
+  <table>
+    <thead><tr><th>kind</th><th>value</th><th>also seen on</th></tr></thead>
+    <tbody>
+    {% for ident, others in ident_rows %}
+      <tr>
+        <td><span class="tag {{ 'high' if others | length else 'blue' }}">{{ ident.kind }}</span></td>
+        <td class="mono wrap">{{ ident.value[:120] }}</td>
+        <td class="dim wrap">
+          {% if others %}
+            {% for a in others[:4] %}{{ a.url }}{% if not loop.last %} · {% endif %}{% endfor %}
+            {% if others | length > 4 %}+{{ others | length - 4 }}{% endif %}
+          {% else %}unique to this service{% endif %}
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="3" class="empty">no identifiers extracted for this service</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div></div>
+
+<div style="margin-top:14px">
+  <form method="post" action="{{ url_for('scans.start') }}" style="display:inline">
+    <input type="hidden" name="target" value="{{ asset.url }}">
+    <input type="hidden" name="route" value="tor">
+    <button class="btn solid" type="submit">Re-scan through Tor →</button>
+  </form>
+  <a class="btn" href="{{ url_for('graph.page') }}">show in graph →</a>
+</div>
+{% endblock %}

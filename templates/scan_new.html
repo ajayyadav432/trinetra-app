@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}New collection run{% endblock %}
+{% block content %}
+<div class="masthead">
+  <div>
+    <div class="eyebrow">§ 02 — collection</div>
+    <h2>New collection run</h2>
+  </div>
+  <div class="meta">13 modules · live transcript · findings stored</div>
+</div>
+
+<div class="grid g2">
+  <div class="panel">
+    <header><span class="t">Target &amp; egress</span><span class="r">step 1 of 1</span></header>
+    <div class="body">
+      <form method="post" action="{{ url_for('scans.start') }}">
+        <div class="field">
+          <label class="fl" for="target">Hidden service address or clearnet URL</label>
+          <input id="target" type="text" name="target" required
+                 placeholder="http://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.onion"
+                 value="{{ request.args.get('target','') }}">
+        </div>
+        <div class="row">
+          <div class="field">
+            <label class="fl" for="route">Egress route</label>
+            <select id="route" name="route">
+              <option value="tor" {{ 'selected' if route == 'tor' }}>Tor SOCKS5 — socks5h://127.0.0.1:9050</option>
+              <option value="direct" {{ 'selected' if route == 'direct' }}>Direct — clearnet / local target</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="fl">Transcript</label>
+            <div style="font-size:11px;padding-top:9px;color:var(--muted)">
+              every module announces its sub-steps while running
+            </div>
+          </div>
+        </div>
+        <button class="btn accent" type="submit">Start collection run →</button>
+      </form>
+      <p class="pill-note" style="margin-bottom:0">
+        Use <b>direct</b> for localhost/clearnet test targets, <b>Tor</b> for .onion services.
+        DNS for onion names resolves inside the Tor circuit (<span class="mono">socks5h</span>),
+        so no lookup leaks back to the clearnet resolver.
+      </p>
+    </div>
+  </div>
+
+  <div class="panel">
+    <header><span class="t">Module plan</span><span class="r">{{ checks | count }} checks</span></header>
+    <div class="body tight">
+      <div class="checks">
+        {% for c in checks %}
+        <div class="check-row">
+          <span class="idx">{{ '%02d' % loop.index }}</span>
+          <span>
+            <span class="title">{{ c.title }}</span><br>
+            <span class="desc">{{ c.desc }}</span>
+          </span>
+          <span class="st">queued</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

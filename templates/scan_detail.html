@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Dossier {{ scan.id }}{% endblock %}
+{% block content %}
+<div class="masthead">
+  <div>
+    <div class="eyebrow">§ 02 — collection · dossier #{{ scan.id }}</div>
+    <h2 style="word-break:break-all">{{ scan.target }}</h2>
+  </div>
+  <div class="meta">
+    status · <span class="tag {{ 'ok' if scan.status == 'done' else ('high' if scan.status == 'failed' else 'medium') }}">{{ scan.status }}</span><br>
+    route · {{ scan.route }} · modules {{ scan.checks_done }}/{{ scan.checks_total }}
+  </div>
+</div>
+
+<div class="grid g4">
+  <div class="panel" style="margin-bottom:0"><div class="body">
+    <div class="k" style="font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)">findings</div>
+    <div style="font-family:var(--serif);font-size:34px">{{ findings | length }}</div>
+  </div></div>
+  <div class="panel" style="margin-bottom:0"><div class="body">
+    <div class="k" style="font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)">started</div>
+    <div style="font-family:var(--serif);font-size:20px">{{ scan.started_at.strftime('%Y-%m-%d %H:%M') }}</div>
+  </div></div>
+  <div class="panel" style="margin-bottom:0"><div class="body">
+    <div class="k" style="font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)">finished</div>
+    <div style="font-family:var(--serif);font-size:20px">{{ scan.finished_at.strftime('%Y-%m-%d %H:%M') if scan.finished_at else 'in progress' }}</div>
+  </div></div>
+  <div class="panel" style="margin-bottom:0"><div class="body">
+    <div class="k" style="font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)">exports</div>
+    <div style="margin-top:6px">
+      <a class="btn small" href="{{ url_for('export.scan_pdf', scan_id=scan.id) }}">pdf report</a>
+      <a class="btn small" href="{{ url_for('export.scan_json', scan_id=scan.id) }}">json</a>
+    </div>
+  </div></div>
+</div>
+
+{% if scan.asset %}
+<div class="section-head">
+  <span class="sn">§</span><h3>Service record</h3>
+  <span class="sh"><a href="{{ url_for('intel.asset', asset_id=scan.asset.id) }}">open in entity register →</a></span>
+</div>
+<div class="panel"><div class="body">
+  <div class="kv">
+    <div>label / title</div><div>{{ scan.asset.title or scan.asset.label or '—' }}</div>
+    <div>category</div><div><span class="tag dark">{{ scan.asset.category }}</span></div>
+    <div>status code</div><div>{{ scan.asset.status_code or '—' }}</div>
+    <div>server banner</div><div class="mono">{{ scan.asset.server_banner or '—' }}</div>
+    <div>certificate</div><div class="mono wrap">{{ scan.asset.cert_subject or '—' }}</div>
+    <div>cert organisation</div><div class="mono">{{ scan.asset.cert_org or '—' }}</div>
+    <div>favicon sha256</div><div class="mono wrap">{{ scan.asset.favicon_hash or '—' }}</div>
+    <div>source / last scan</div><div>{{ scan.asset.source }} · {{ scan.asset.last_scan.strftime('%Y-%m-%d %H:%M') if scan.asset.last_scan else '—' }}</div>
+  </div>
+</div></div>
+{% endif %}
+
+<div class="section-head">
+  <span class="sn">§</span><h3>Findings</h3>
+  <span class="sh">{{ findings | length }} records · expand for evidence</span>
+</div>
+
+<div class="panel">
+  <div class="body tight">
+    {% for f, detail in findings %}
+    <details class="finding">
+      <summary>
+        <span class="tag {{ f.severity }}">{{ f.severity }}</span>
+        <span><span class="f-title">{{ f.title }}</span></span>
+        <span class="f-meta">{{ f.check_id }} · #{{ f.id }}</span>
+      </summary>
+      <pre>{{ detail | tojson(indent=2) }}</pre>
+    </details>
+    {% else %}
+      <div class="empty">no findings — the run produced no evidence</div>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="section-head">
+  <span class="sn">§</span><h3>Transcript</h3>
+  <span class="sh">{{ events | length }} events</span>
+</div>
+<div class="panel">
+  <div class="log-head"><span>stored transcript</span><span>{{ scan.checks_done }}/{{ scan.checks_total }} modules</span></div>
+  <div class="log" style="height:340px">
+    {% for e in events %}
+    <div><span class="l-ts">[{{ e.ts.strftime('%H:%M:%S') }}]</span>
+      <span class="l-{{ e.level }}">{{ '» ' if e.level == 'step' }}{{ e.message }}</span></div>
+    {% else %}
+    <div class="l-info">no events stored</div>
+    {% endfor %}
+  </div>
+</div>
+
+{% if scan.error %}
+<div class="panel"><header><span class="t" style="color:var(--accent)">Failure detail</span></header>
+  <div class="body"><pre style="white-space:pre-wrap">{{ scan.error }}</pre></div></div>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+{% block title %}Live run {{ scan.id }}{% endblock %}
+{% block head %}
+<script>
+  window.TRINETRA = {
+    scanId: {{ scan.id }},
+    status: {{ scan.status | tojson }},
+    checksTotal: {{ scan.checks_total or checks | count }}
+  };
+</script>
+<style>
+  #log { height: calc(100vh - 15rem); }
+</style>
+{% endblock %}
+{% block content %}
+
+<!-- ============================================ breadcrumb ribbon -->
+<div class="flex flex-wrap items-center justify-between gap-space-sm px-space-md py-space-xs bg-surface-container-lowest border border-surface-container-high mb-space-md text-label-xs font-label-xs">
+  <div class="flex items-center gap-space-sm flex-wrap">
+    <span class="text-outline uppercase tracking-wider">WORKBENCH</span>
+    <span class="text-outline-variant">/</span>
+    <span class="text-outline uppercase tracking-wider">COLLECTION ENGINE</span>
+    <span class="text-outline-variant">/</span>
+    <span class="text-primary font-bold uppercase tracking-wider">RUN #{{ scan.id }}</span>
+    <span class="px-space-xs py-0.5 bg-surface-container border border-outline-variant text-secondary font-mono tracking-widest font-semibold flex items-center gap-1">
+      <span class="inline-block w-1.5 h-1.5 rounded-full bg-secondary animate-ping"></span> STREAM ACTIVE
+    </span>
+  </div>
+  <div class="flex items-center gap-space-md font-mono">
+    <span class="text-outline">ROUTE: <span class="text-on-surface">{{ scan.route | upper }}</span></span>
+    <span class="text-outline-variant">|</span>
+    <span class="text-outline">SOCKS5: <span class="text-secondary">9050</span></span>
+    <span class="text-outline-variant">|</span>
+    <span class="text-error font-bold uppercase tracking-widest">CHAIN-OF-CUSTODY ACTIVE</span>
+  </div>
+</div>
+
+<!-- ============================================ split screen -->
+<div class="grid grid-cols-1 lg:grid-cols-12 w-full gap-gutter bg-surface-container-high border border-surface-container-high">
+
+  <!-- ================= left: dispatch + checklist -->
+  <section class="lg:col-span-5 bg-surface-container-lowest flex flex-col">
+    <div class="p-space-md bg-surface-container-low border-b border-surface-container-high flex flex-col gap-space-sm">
+      <div class="flex items-start justify-between gap-space-sm">
+        <div class="flex flex-col">
+          <span class="font-label-xs text-label-xs text-outline tracking-widest uppercase">dispatch reference</span>
+          <span class="font-headline-md text-headline-md text-on-surface tracking-wider font-bold">RUN-{{ '%04d' % scan.id }}</span>
+        </div>
+        <div class="px-space-xs py-1 border border-primary text-primary bg-primary/5 font-label-xs text-label-xs tracking-wider font-bold uppercase">
+          [ {{ 'SECRET // NOFORN' if scan.route == 'tor' else 'DIRECT // CLEARNET' }} ]
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-1 p-space-xs bg-surface-container-lowest border border-surface-container-high font-mono text-body-sm">
+        <div class="flex items-baseline justify-between gap-space-xs">
+          <span class="text-outline uppercase text-label-xs font-label-xs shrink-0">TARGET:</span>
+          <span class="text-primary-container font-semibold truncate text-right">{{ scan.target }}</span>
+        </div>
+        <div class="flex items-baseline justify-between gap-space-xs text-label-xs font-label-xs">
+          <span class="text-outline uppercase shrink-0">ROUTE:</span>
+          <span class="text-on-surface truncate text-right">{{ 'TOR-CIRCUIT-ISOLATED (SOCKS5H://127.0.0.1:9050)' if scan.route == 'tor' else 'DIRECT EGRESS (NO PROXY)' }}</span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-3 gap-gutter bg-surface-container-high border border-surface-container-high">
+        <div class="p-space-xs bg-surface-container-low flex flex-col">
+          <span class="text-label-xs font-label-xs text-outline uppercase">ELAPSED</span>
+          <span class="font-mono text-body-md font-bold text-on-surface" id="run-timer">00:00:00</span>
+        </div>
+        <div class="p-space-xs bg-surface-container-low flex flex-col">
+          <span class="text-label-xs font-label-xs text-outline uppercase">MODULES</span>
+          <span class="font-mono text-body-md font-bold text-secondary" id="progress-label">{{ scan.checks_done }} / {{ scan.checks_total or checks | count }}</span>
+        </div>
+        <div class="p-space-xs bg-surface-container-low flex flex-col">
+          <span class="text-label-xs font-label-xs text-outline uppercase">FINDINGS</span>
+          <span class="font-mono text-body-md font-bold text-tertiary-fixed" id="findings-count">{{ scan.findings_total }}</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-space-xs font-mono text-label-xs font-label-xs">
+        <div class="flex-1 py-1 px-space-xs bg-surface-container border border-outline-variant text-tertiary text-center uppercase tracking-wider font-bold">
+          RUN STATUS · <span id="run-status" style="color:var(--warn)">{{ scan.status }}</span>
+        </div>
+        <div class="flex-1 py-1 px-space-xs bg-secondary-container/20 border border-secondary text-secondary text-center uppercase tracking-wider font-bold">
+          {{ scan.route | upper }} EGRESS
+        </div>
+      </div>
+    </div>
+
+    <!-- 13-segment progress -->
+    <div class="p-space-md bg-surface-container-lowest border-b border-surface-container-high flex flex-col gap-space-xs">
+      <div class="flex items-center justify-between text-label-xs font-label-xs">
+        <span class="text-on-surface font-mono font-bold tracking-wider">MODULE EXECUTION MATRIX</span>
+        <span class="text-secondary font-mono font-bold">{{ scan.progress or 0 }}% COMPLETE</span>
+      </div>
+      <div class="meter" id="meter">{% for c in checks %}<i></i>{% endfor %}</div>
+      <div class="flex justify-between items-center text-label-xs font-label-xs text-outline font-mono">
+        <span>START: TARGET_ACCEPT</span>
+        <span>13 CHECK MODULES</span>
+        <span>END: SIGNED_ATTEST</span>
+      </div>
+    </div>
+
+    <!-- module checklist -->
+    <div class="flex-1 divide-y divide-surface-container-high checks" id="checklist">
+      {% for c in checks %}
+      <div class="check-row" data-check="{{ c.id }}">
+        <span class="idx">{{ '%02d' % loop.index }}</span>
+        <span class="min-w-0">
+          <span class="title block truncate">{{ c.title }}</span>
+          <span class="desc block">{{ c.desc }}</span>
+        </span>
+        <span class="st">queued</span>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="p-space-sm bg-surface-container-low border-t border-surface-container-high flex items-center justify-between gap-space-sm text-label-xs font-label-xs">
+      <span class="font-mono text-outline">EVIDENTIARY HASH: <span class="text-on-surface font-semibold">SHA256:{{ '%04x' % scan.id }}…live</span></span>
+      <a class="px-space-sm py-1 bg-surface-container-high hover:bg-surface-variant text-on-surface border border-outline-variant uppercase font-mono tracking-wider transition-colors" href="{{ url_for('scans.index') }}">RUN HISTORY</a>
+    </div>
+  </section>
+
+  <!-- ================= right: telemetry terminal -->
+  <section class="lg:col-span-7 bg-[#080706] flex flex-col relative overflow-hidden">
+    <div class="px-space-md py-space-xs bg-surface-container-lowest border-b border-surface-container-high flex flex-wrap items-center justify-between gap-space-sm">
+      <div class="flex items-center gap-space-xs text-label-xs font-label-xs">
+        <span class="material-symbols-outlined text-[16px] text-primary">terminal</span>
+        <span class="font-mono font-bold text-on-surface tracking-wider">TELEMETRY ENGINE</span>
+        <span class="text-outline font-mono">// STREAM_ID: #0x{{ '%04X' % scan.id }} // RUN {{ scan.id }}</span>
+      </div>
+      <div class="flex items-center gap-1 font-mono text-label-xs font-label-xs" id="filter-controls">
+        <button class="px-1.5 py-0.5 bg-surface-container-high text-primary border border-primary font-bold" data-filter="all" type="button">ALL</button>
+        <button class="px-1.5 py-0.5 bg-surface-container text-outline hover:text-on-surface border border-outline-variant" data-filter="step" type="button">STEP</button>
+        <button class="px-1.5 py-0.5 bg-surface-container text-outline hover:text-on-surface border border-outline-variant" data-filter="info" type="button">INFO</button>
+        <button class="px-1.5 py-0.5 bg-surface-container text-outline hover:text-on-surface border border-outline-variant" data-filter="ok" type="button">OK</button>
+        <button class="px-1.5 py-0.5 bg-surface-container text-outline hover:text-on-surface border border-outline-variant" data-filter="warn" type="button">WARN</button>
+        <button class="px-1.5 py-0.5 bg-primary/10 text-primary border border-primary/50 font-bold animate-pulse" data-filter="err" type="button">ERR</button>
+      </div>
+      <span class="font-mono text-label-xs text-label-xs text-outline" id="log-count">0 lines</span>
+    </div>
+
+    <div class="flex-1 p-space-md overflow-y-auto select-text" id="terminal-stream">
+      <div class="text-outline text-label-xs font-label-xs py-1 border-b border-surface-container-high mb-2">
+        --- [STREAM INITIATION // ENCLAVE: LOCAL-BUILD // TARGET {{ scan.target[:48] }}] ---
+      </div>
+      <div class="log" id="log" style="border:none;background:transparent;height:auto;max-height:none;padding:0"></div>
+    </div>
+
+    <div class="p-space-sm bg-surface-container-lowest border-t border-surface-container-high flex items-center gap-space-sm font-mono text-body-sm">
+      <span class="text-primary font-bold">TRN-STREAM:&gt;</span>
+      <div class="flex-1 text-outline flex items-center truncate">
+        <span class="text-on-surface font-semibold">tail -f /var/log/trinetra/orchestration_{{ scan.id }}.log</span>
+        <span class="inline-block w-2 h-4 bg-primary ml-1 animate-pulse"></span>
+      </div>
+      <div class="flex items-center gap-space-xs text-label-xs font-label-xs text-outline">
+        <span class="h-1.5 w-1.5 rounded-full bg-secondary"></span><span>BUFFER SYNC</span>
+      </div>
+    </div>
+
+    <!-- run complete overlay -->
+    <div class="absolute bottom-4 right-4 max-w-lg w-[calc(100%-2rem)] bg-surface-container-low border-2 border-secondary p-space-md flex flex-col gap-space-sm z-30" id="done-panel" style="display:none">
+      <div class="flex items-start justify-between border-b border-surface-container-high pb-space-xs">
+        <div class="flex items-center gap-space-xs">
+          <span class="material-symbols-outlined text-secondary text-[20px]">verified</span>
+          <div class="flex flex-col">
+            <span class="font-headline-sm text-headline-sm text-on-surface tracking-wider font-bold uppercase">COLLECTION RUN FINISHED</span>
+            <span class="font-label-xs text-label-xs text-secondary font-mono font-bold tracking-widest" id="done-meta">13/13 MODULES EXECUTED</span>
+          </div>
+        </div>
+        <button class="text-outline hover:text-on-surface text-[18px] material-symbols-outlined" onclick="document.getElementById('done-panel').style.display='none'" type="button">close</button>
+      </div>
+      <div class="text-body-sm font-mono" id="done-findings"></div>
+      <div class="grid grid-cols-2 gap-space-xs pt-1">
+        <a class="py-space-xs px-space-sm bg-primary-container hover:bg-inverse-primary text-on-primary font-mono text-label-xs font-label-xs uppercase font-bold tracking-wider text-center transition-colors flex items-center justify-center gap-1" href="{{ url_for('scans.detail', scan_id=scan.id) }}">
+          <span class="material-symbols-outlined text-[14px]">folder_open</span><span>OPEN DOSSIER #{{ '%04d' % scan.id }}</span>
+        </a>
+        <a class="py-space-xs px-space-sm bg-surface-container hover:bg-surface-container-high text-on-surface border border-outline-variant font-mono text-label-xs font-label-xs uppercase font-bold tracking-wider text-center transition-colors flex items-center justify-center gap-1" href="{{ url_for('export.intel_json') }}">
+          <span class="material-symbols-outlined text-[14px]">download</span><span>EXPORT CAPTURE JSON</span>
+        </a>
+      </div>
+    </div>
+  </section>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/live.js') }}"></script>
+<script>
+  (function () {
+    // live runtime timer
+    var started = {{ (scan.started_at.timestamp() if scan.started_at else 0) }};
+    var el = document.getElementById('run-timer');
+    function tick() {
+      if (!el) return;
+      var s = Math.max(0, Math.floor(Date.now() / 1000 - started));
+      var h = String(Math.floor(s / 3600)).padStart(2, '0');
+      var m = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
+      var ss = String(s % 60).padStart(2, '0');
+      el.textContent = h + ':' + m + ':' + ss;
+    }
+    if (started) { tick(); setInterval(tick, 1000); }
+
+    // transcript level filters
+    var buttons = document.querySelectorAll('#filter-controls button');
+    buttons.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var f = btn.getAttribute('data-filter');
+        buttons.forEach(function (b) {
+          b.classList.remove('bg-surface-container-high', 'text-primary', 'border-primary', 'font-bold');
+          b.classList.add('bg-surface-container', 'text-outline', 'border-outline-variant');
+        });
+        btn.classList.add('bg-surface-container-high', 'text-primary', 'border-primary', 'font-bold');
+        btn.classList.remove('bg-surface-container', 'text-outline', 'border-outline-variant');
+        document.querySelectorAll('#log > div').forEach(function (line) {
+          var lvl = (line.querySelector('span:nth-child(2)') || {}).className || '';
+          var keep = f === 'all' || lvl.indexOf('l-' + f) !== -1 || (f === 'step' && lvl.indexOf('l-step') !== -1);
+          line.style.display = keep ? '' : 'none';
+        });
+      });
+    });
+  })();
+</script>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Collection runs{% endblock %}
+{% block content %}
+<div class="masthead">
+  <div>
+    <div class="eyebrow">§ 02 — collection</div>
+    <h2>Run history</h2>
+  </div>
+  <div class="meta">
+    <a class="btn accent" href="{{ url_for('scans.new') }}">new collection run</a>
+  </div>
+</div>
+
+<div class="panel">
+  <header><span class="t">All runs</span><span class="r">{{ scans | length }} shown</span></header>
+  <div class="body tight">
+    <table>
+      <thead>
+        <tr><th>#</th><th>target</th><th>route</th><th>status</th><th class="num">checks</th>
+            <th class="num">findings</th><th>started</th><th>finished</th><th></th></tr>
+      </thead>
+      <tbody>
+      {% for s in scans %}
+        <tr>
+          <td class="dim">{{ s.id }}</td>
+          <td class="wrap">{{ s.target }}</td>
+          <td><span class="tag {{ 'dark' if s.route == 'tor' else 'info' }}">{{ s.route }}</span></td>
+          <td><span class="tag {{ 'ok' if s.status == 'done' else ('high' if s.status == 'failed' else 'medium') }}">{{ s.status }}</span></td>
+          <td class="num">{{ s.checks_done }}/{{ s.checks_total }}</td>
+          <td class="num">{{ s.findings_total }}</td>
+          <td class="dim">{{ s.started_at.strftime('%m-%d %H:%M:%S') }}</td>
+          <td class="dim">{{ s.finished_at.strftime('%m-%d %H:%M:%S') if s.finished_at else '—' }}</td>
+          <td><a class="btn small" href="{{ url_for('scans.detail', scan_id=s.id) }}">report</a></td>
+        </tr>
+      {% else %}
+        <tr><td colspan="9" class="empty">no collection runs recorded</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

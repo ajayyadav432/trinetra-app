@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Comparison{% endblock %}
+{% block content %}
+<div class="masthead">
+  <div>
+    <div class="eyebrow">§ 05 — ad-hoc comparison</div>
+    <h2>Two samples, one verdict</h2>
+  </div>
+  <div class="meta"><a class="btn small" href="{{ url_for('styl.page') }}">← back to corpus</a></div>
+</div>
+
+{% if result %}
+<div class="stats" style="margin-bottom:22px">
+  <div class="stat">
+    <div class="k">similarity score</div>
+    <div class="v">{{ '%.3f' % result.score }}</div>
+    <div class="s">{{ result.label }}</div>
+  </div>
+  <div class="stat">
+    <div class="k">function words</div>
+    <div class="v">{{ '%.3f' % result.components.function_words }}</div>
+    <div class="s">cosine over 100 function words</div>
+  </div>
+  <div class="stat">
+    <div class="k">character trigrams</div>
+    <div class="v">{{ '%.3f' % result.components.char_ngrams }}</div>
+    <div class="s">cosine over char-3-gram counts</div>
+  </div>
+  <div class="stat">
+    <div class="k">statistical shape</div>
+    <div class="v">{{ '%.3f' % result.components.statistical_shape }}</div>
+    <div class="s">sentence / word / lexicon profile</div>
+  </div>
+</div>
+
+<div class="panel">
+  <header><span class="t">Components</span>
+    <span class="r">research library · {{ '%.3f' % result.components.research_library if result.components.research_library is not none else 'unavailable' }}</span></header>
+  <div class="body">
+    <div class="kv">
+      <div>sample a</div><div class="mono wrap">{{ a[:400] }}{% if a|length > 400 %}…{% endif %}</div>
+      <div>sample b</div><div class="mono wrap">{{ b[:400] }}{% if b|length > 400 %}…{% endif %}</div>
+      <div>verdict</div><div><b>{{ result.label }}</b></div>
+    </div>
+  </div>
+</div>
+{% else %}
+<div class="panel"><div class="empty">provide both samples</div></div>
+{% endif %}
+{% endblock %}
